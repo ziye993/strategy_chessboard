@@ -91,6 +91,8 @@ export function getVertexs({ x, y, size }) {
   return { vertexs, sideLength }
 }
 
+
+
 //计算中心点
 function getCenters(ctx, size = 30) {
   const width = ctx.canvas.width;
@@ -99,18 +101,19 @@ function getCenters(ctx, size = 30) {
   const initialCenter = { x: sideLength, y: size };
   const center = { ...initialCenter, sideLength, size };
   const centers = [[{ ...center }]];
-
+  let offsetx = 0;
+  let offsety = 0;
   while (center.x < width - sideLength && center.y < height - size) {
 
     center.x += 2 * sideLength;
     // center.y = center.y + size * 1.5 * (centers.length - 1);
-    if (center.x >= (width - sideLength)) {
+    if (center.x + offsetx >= (width - sideLength)) {
       center.x = sideLength;
       if (centers.length % 2 === 1) {
         center.x = 2 * sideLength;
       }
       center.y = center.y + size * 1.5;
-      if (center.y >= height - size) {
+      if (center.y + offsety >= height - size) {
         break
       }
       centers.push([{ ...center, sideLength, size }]);
@@ -118,8 +121,9 @@ function getCenters(ctx, size = 30) {
       centers[centers.length - 1].push({ ...center, sideLength, size });
     }
   }
-
-  return centers;
+  offsetx = (width - (centers[0][centers[0].length - 1].x + sideLength)) / 2;
+  offsety = (height - (centers[centers.length - 1][centers[centers.length - 1].length - 1].y + sideLength)) / 2;
+  return centers.map(_ => _.map(__ => { __.x += offsetx; __.y += offsety; return __ }));
 }
 
 export function renderHexagon(ctx, size = 30) {

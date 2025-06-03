@@ -1,65 +1,32 @@
 import React, { useEffect, useRef, useState } from "react";
 import './App.css'
-import SpanButton from "./components/SpanButton";
 import useCanvasInit from "./effect/canvasInit";
-import Game from "./class/game";
-import { logObjs } from "./tool/utils";
-import SpanText from "./components/SpanText";
-import GameMask from "./gameComponents/startMask";
 import GameStatus from "./gameComponents/gameStatus";
-import GameConfig from "./gameComponents/gameConfig";
-import ConfigUi from "./QLearning/Ui";
-import QLearningAgent from "./QLearning";
+import AiUi from "./QLearning/Ui";
+import useGameStatus from "./effect/useGameStatus";
+import WinBox from "./gameComponents/winBox";
 function App(props) {
   const canvasDom = useRef(null);
-  const [start, setStart] = useState(false);
   const [show, setShow] = useState(false);
   const ctx = useCanvasInit(canvasDom);
-  const game = useRef(null);
-  const [gameInfo, SGI] = useState({});
-  const qL = useRef(null)
-
-  const setGameInfo = (gi) => {
-    SGI(() => {
-      return { ...gameInfo, ...gi }
-    })
-  }
-  useEffect(() => {
-    if (ctx.current && !game.current) {
-      ctx.current.imageSmoothingEnabled = true;
-      game.current = new Game(ctx.current);
-      game.current.init();
-      game.current.update((data) => {
-        if (data.isStart === true) {
-          setGameInfo({
-            currentroleColor: `rgba(${data.roles?.[data.currentActionRole].linghColor.join(',')})`,
-            cuStep: data.roles?.[data?.currentActionRole]?.currentStep,
-            pointNumber: data.roles?.[data?.currentActionRole].fraction,
-          });
-          logObjs(game.current.roles[0], game.current.roles[1], game.current.roles[2])
-        }
-      });
-      // qL.current = new QLearningAgent(game.current,)
-    }
-  }, [ctx]);
-
-  const gameStatusClick = () => {
-    if (!game.current.isStart) {
-      game.current.start();
-    } else {
-      game.current.nextSetp();
-    }
-  }
-
-  const newGame = () => {
-    console.log('newGame')
-    game.current.init();
-  }
+  const gameStatus = useGameStatus(ctx);
+  const [modalOpen, setModalOpen] = useState(!!gameStatus?.gameInfo?.winRole);
+  
+  useEffect(() => { setModalOpen(!!gameStatus?.gameInfo?.winRole || gameStatus?.gameInfo?.error) }, [gameStatus?.gameInfo]);
 
   return <div className="game_main">
-    <GameStatus gameInfo={gameInfo} gameStatusClick={gameStatusClick} newGame={newGame} />
-    <ConfigUi show={show} onClick={() => { setShow(prev => !prev) }} />
-    <canvas id={"game"} ref={canvasDom} />
+    <AiUi {...gameStatus} show={show} onClick={() => { setShow(prev => !prev) }} />
+    <div id={"canvasBox"}><canvas id={"game"} ref={canvasDom} width="0" height="0" /></div>
+    <GameStatus {...gameStatus} aiSetting={() => { setShow(prev => !prev) }} />
+    <WinBox isOpen={modalOpen}
+      onClose={() => setModalOpen(false)}
+      title="游戏结束！"
+      onConfirm={() => {
+        setModalOpen(false);
+      }}
+    >
+      <p className="winText">{gameStatus?.gameInfo?.winRole?.name ? "胜利者：" : ''} {gameStatus?.gameInfo?.winRole?.name || gameStatus?.gameInfo?.error} </p>
+    </WinBox>
   </div>
 }
 

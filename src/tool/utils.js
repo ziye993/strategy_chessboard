@@ -127,3 +127,148 @@ export function setNDArray(...dims) {
   arr[curr] = setNDArray(arr[curr], value, ...dimsOther);
 }
 
+
+export function isEqual(objA, objB) {
+  // 首先检查是否为同一个引用
+  if (Object.is(objA, objB)) return true;
+
+  // 检查是否有一个不是对象
+  if (
+    typeof objA !== 'object' ||
+    objA === null ||
+    typeof objB !== 'object' ||
+    objB === null
+  ) {
+    return false;
+  }
+
+  // 获取所有自身属性（包括不可枚举属性，但不包括 Symbol 类型的属性）
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
+
+  // 检查属性数量是否相同
+  if (keysA.length !== keysB.length) return false;
+
+  // 递归检查每个属性的值是否相同
+  for (let i = 0; i < keysA.length; i++) {
+    const key = keysA[i];
+    if (
+      !Object.prototype.hasOwnProperty.call(objB, key) ||
+      !isEqual(objA[key], objB[key])
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+export function saveQTable(filename, qTable) {
+  localStorage.setItem(filename, JSON.stringify(qTable));
+}
+
+export function deepMerge(target, source) {
+  const isObject = (obj) => obj && typeof obj === 'object';
+
+  // 对源对象进行深拷贝
+  const targetCopy = JSON.parse(JSON.stringify(target));
+  const sourceCopy = JSON.parse(JSON.stringify(source));
+
+  if (!isObject(targetCopy) || !isObject(sourceCopy)) {
+    return sourceCopy;
+  }
+
+  Object.keys(sourceCopy).forEach(key => {
+    const targetValue = targetCopy[key];
+    const sourceValue = sourceCopy[key];
+
+    if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
+      targetCopy[key] = targetValue.concat(sourceValue);
+    } else if (isObject(targetValue) && isObject(sourceValue)) {
+      targetCopy[key] = deepMerge(targetValue, sourceValue);
+    } else {
+      targetCopy[key] = sourceValue;
+    }
+  });
+
+  return targetCopy;
+}
+
+
+let logHistory = [];
+let isLog = false;
+// let timeId = 10;
+let currentTime = 0;
+export function customLog(message) {
+  if (isLog) {
+    return
+  }
+  if (currentTime === 0) {
+    currentTime = Date.now();
+    return;
+  }
+  const c = Date.now();
+  if (c - currentTime > 2000) {
+    console.clear();
+    console.table(logHistory);
+    isLog = true;
+    logHistory = [];
+    currentTime = c
+  } else {
+    logHistory.push(message);
+  }
+}
+
+export function multiply(a, b) { //除法
+  const scale = Math.pow(10, Math.max(
+    (a.toString().split('.')[1] || '').length,
+    (b.toString().split('.')[1] || '').length
+  ));
+  return (a * scale) * (b * scale) / (scale * scale);
+}
+
+const promiseTimeOut = 2000;
+
+export function workerPromise(worker, type, timeOut, ...data) {
+
+  return new Promise((res, rej) => {
+    const id = Math.random();
+    worker.onmessage = e => {
+      if (('' + e.data.id) === ('' + id)) {
+        worker.onmessage = undefined;
+        res(e.data.data);
+        worker.onmessage = undefined
+      }
+      else console.warn(`id 错误: e.id:${e.data.id}, random.id:${id}`);
+
+    };
+    worker.postMessage({ type: type, data: [...data], id });
+    timeOut !== Infinity && setTimeout(() => rej("超时" + type,), timeOut || promiseTimeOut);
+  });
+}
+
+export function workerfun(worker, type, ...data) {
+  worker.postMessage({ type: type, data: [...data] })
+}
+
+export function aiLog(...param) {
+  console.log(...param.map(_ => typeof _ === 'string' ? `[[ ${_} ]]` : _));
+}
+
+export function padNumber(input, targetLength) {
+  const str = String(input);
+  const lengthDiff = targetLength - str.length;
+
+  if (lengthDiff <= 0) {
+    return str; // 长度足够或超出，直接返回
+  }
+
+  // 处理前导零的情况：末尾补零
+  if (str.startsWith('0')) {
+    return str + '0'.repeat(lengthDiff);
+  }
+
+  // 其他情况：前导补零
+  return '0'.repeat(lengthDiff) + str;
+}

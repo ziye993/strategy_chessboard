@@ -28,9 +28,10 @@ function findNearestPoints(arr1, arr2) {
   return [{ ...arr1[index1] }, { ...arr2[index2] }]
 }
 
-//游戏元素
+//游戏元素 //正六边形的块
 export default class Block {
-  constructor(ctx, game) {
+  constructor(ctx, _key) {
+    this._key = _key;
     this.content = 0;
     this.color = [34, 34, 34, 1];
     this.id = null;
@@ -42,9 +43,14 @@ export default class Block {
     this.vertex = [];
     this.ctx = ctx;
     this.selected = false;
-    this.game = game;
-    this.contentIsMax = false;
-    this.maxType = this.maxSize > 10 ? 2 : (this.maxSize > 6 ? 1 : 0);
+    this.isDisadvantaged = false;
+    // this.game = game;
+    // this.contentIsMax = false;
+    // this.maxType = this.maxSize > 10 ? 2 : (this.maxSize > 6 ? 1 : 0);
+  }
+
+  get key() {
+    return this._key
   }
 
   initNeighborsPositionIndex() {
@@ -70,7 +76,7 @@ export default class Block {
     // 计算顶点坐标
     this.point = {
       ...this.point,
-      ...getVertexs({
+      ...getVertexs({ //顶点位置
         x: this.point.x,
         y: this.point.y,
         size: this.point.size - (10 - this.maxSize) * (3 - this.maxSize / 10),
@@ -78,7 +84,7 @@ export default class Block {
       size: this.point.size - (10 - this.maxSize) * (3 - this.maxSize / 5),
       maxSize: this.maxSize,
     }
-    this.color = config.color
+    this.color = config.color;
   }
 
   renderBlock() {
@@ -87,152 +93,115 @@ export default class Block {
       this.ctx,
       this.point,
       (this.selected ? this.belongsTo?.linghColor : this.belongsTo?.color) || this.color,
-      this.content,
+      this.content, //this.content,
       this.content / this.maxSize
     );
     this.neighbors.forEach(nei => {
       const linePoints = findNearestPoints(nei.point.vertexs, this.point.vertexs);
+      let lineColor = [...this.color.toSpliced(2, 1), 0.5];
       if (this.belongsTo === nei.belongsTo && this.belongsTo) {
-        drawLine(this.ctx, linePoints, this.belongsTo.linghColor);
+        lineColor = this.belongsTo.linghColor;
       } else if (nei.belongsTo === null && this.belongsTo) {
-        drawLine(this.ctx, linePoints, this.belongsTo.color);
-      } else {
-        drawLine(this.ctx, linePoints, [...this.color.toSpliced(2, 1), 0.5]);
-        // drawLine(this.ctx, linePoints, [255, 0, 0, 1])
+        lineColor = this.belongsTo.color;
       }
+      drawLine(this.ctx, linePoints, lineColor);
     });
   }
 
   isSelect(value) {
     const px = getDistance(value, this.point);
     const selected = px < this.point.sideLength;
-    selected && this.game.pushSelctBlockList(this)
     return selected;
   }
 
-  tryNeigiveSelf(selectBlock, currentBlock) {
-    if (selectBlock.belongsTo && (selectBlock.belongsTo !== currentBlock.belongsTo)) {//
-      if (selectBlock.content !== 1) {
-        this.content = selectBlock.content - 1;
-        this.belongsTo = selectBlock.belongsTo;
-        selectBlock.content = 1;
-        selectBlock.selected = false;
+  isNei(block) {
+    return this.neighbors.find(_ => _ === block)
+  }
+
+  hit(block) {
+    console.log('1')
+    if (!block) {
+      console.log('1')
+      return this
+    }
+    if (this?.belongsTo?.actionType === 1) { //加点阶段
+      this.tryProliferation(1);
+      console.log('2')
+      return this
+    }
+    if (block?.belongsTo?.isAction && this?.belongsTo !== block?.belongsTo && this.isNei(block)) { //符合进攻特征
+      if (block.belongsTo.actionType === 0) { //进攻阶段
+        this.tryAttacked(block);
+      }
+    }
+    console.log('3')
+    return this
+  }
+
+
+  tryAttacked(block) {
+    const neiSelect = block; //攻击者     this=被攻击者
+    if (neiSelect && (neiSelect.belongsTo !== this.belongsTo)) {
+      // 敌方进攻
+      if (!neiSelect || !neiSelect.belongsTo || neiSelect.content === 1) {
+        return '无法进攻'
+      }
+      if (neiSelect.content - 2 >= this.content) { //可吃/覆盖/占领` 
+        this.content = neiSelect.content - 1 - this.content;
+        neiSelect.content = 1;
+        this.belongsTo && (this.belongsTo.removeBlock(this));
+        this.belongsTo = neiSelect.belongsTo;
         this.belongsTo.blocks.push(this);
-        this.belongsTo.game.updataEmitter();
-      }
-    } else if (!selectBlock.belongsTo) {
-      selectBlock.selected = false;
-      this.selected = false;
-    }
-  }
-
-  robotDivision(selectBlock) { //机器人分裂
-    this.tryNeigiveSelf(selectBlock, this);
-    this.renderBlock();
-  }
-
-  division(value) { //被选中//被点击//攻击
-    //邻居是否被选中
-    // this.belongsTo && this.belongsTo.selectEnd();
-    const seled = this.isSelect(value);
-    this.selected = seled;
-    if (seled) { //选中
-      const neiSelect = this.neighbors.find(item => { return item.selected });
-      if (neiSelect) { // 邻居被选中
-        this.tryNeigiveSelf(neiSelect, this);
-      }
-    }
-    this.renderBlock();
-  }
-
-  selecteds(value) {
-    this.selected = this.isSelect(value);
-    this.renderBlock();
-  }
-
-  attacked(value) {
-    const seled = this.isSelect(value);
-    if (seled) { //选中
-      console.log(1)
-      const neiSelect = this.neighbors.find(item => { return item.selected && (item.belongsTo === this.game?.selectBlocks?.[0]?.belongsTo) });
-      if (neiSelect && (neiSelect.belongsTo !== this.belongsTo)) {
-        console.log(2)
-        // 敌方进攻
-        if (!neiSelect || !neiSelect.belongsTo) {
-          return
-        }
-        if (neiSelect.content - 2 >= this.content) { //可吃/覆盖/占领
-          console.log(3)
-          this.content = neiSelect.content - 1 - this.content;
-          neiSelect.content = 1;
+        this.selected = true;
+        return '可吃/覆盖/占领'
+      } else if (neiSelect.content - 1 >= this.content) { //攻击者大1点 并且被攻击者处于虚弱状态
+        this.content = 1;
+        neiSelect.content = 1;
+        if (this.isDisadvantaged && !neiSelect.isDisadvantaged) {
+          this.belongsTo.removeBlock(this);
           this.belongsTo = neiSelect.belongsTo;
-          this.belongsTo.blocks.push(this);
-          this.selected = true
-          this.belongsTo.game.updataEmitter();
-        } else if (this.content === neiSelect.content) { //抵消
-          console.log(4)
-          this.content = 1;
-          neiSelect.content = 1;
-          neiSelect.selected = true;
-        } else if (neiSelect.content - 1 === this.content) {
-          neiSelect.content = 1;
-          this.content = 1;
-          this.belongsTo = neiSelect.belongsTo;
-        } else if (this.content > neiSelect.content) { //无法抵消
-          console.log(5)
-          this.content = this.content - (neiSelect.content - 1)
-          neiSelect.content = 1;
-        } else { //
-          console.log(6)
+          this.isDisadvantaged = false;
+          this.neighbors.isDisadvantaged = false;
+          return '被攻击者处于虚弱状态'
+        } else {
+          if (neiSelect.isDisadvantaged) {
+            this.neighbors.isDisadvantaged = false;
+            return '攻击者处于虚弱状态'
+          } else {
+            this.neighbors.isDisadvantaged = true;
+            neiSelect.isDisadvantaged = true;
+            return '攻击者大 [ 1 ] 点'
+          }
         }
-        console.log(7, this.content, neiSelect.content)
+      } else if (this.content === neiSelect.content) {
+        this.isDisadvantaged = true;
+        neiSelect.isDisadvantaged = true
+        this.content = 1;
+        neiSelect.content = 1;
+        return '两者相等'
       } else {
-        console.log(8, this.neighbors, this.game?.selectBlocks)
-      }
-    }
-  }
-
-  pointProliferation(value) {
-    const seled = this.isSelect(value);
-    if (seled) {
-      if (this.belongsTo.fraction > 0) {
-        if (this.content < this.maxSize) {
-          this.content += 1;
-          this.belongsTo.fraction -= 1;
-        }
-      }
-      this.renderBlock();
-      if (this.belongsTo.fraction === 0) { //结束
-        this.game.nextSetp();
-      }
-    }
-    this.selected = false;
-    this.game.updateEvent()
-  }
-
-  proliferation(value) {
-    let realValue = value;
-    if (!isNaN(value) && value >= 0) {
-      if (realValue > this.belongsTo.fraction) { //
-        realValue = this.belongsTo.fraction;
-      }
-      this.content += realValue;
-      if (this.content > this.maxSize) {
-        this.belongsTo.fraction -= realValue - (this.content - this.maxSize);
-        this.content = this.maxSize;
-        this.contentIsMax = true;
-      } else {
-        this.belongsTo.fraction -= realValue;
+        neiSelect.isDisadvantaged = true;
+        this.content = this.content - (neiSelect.content - 1);
+        neiSelect.content = 1;
+        neiSelect.content = 1;
+        return '攻击者点数不足'
       }
     } else {
-      if (this.content < this.maxSize) { //
-        this.content += 1;
-        this.belongsTo.fraction -= 1;
-        if (this.content === this.maxSize) { //
-          this.contentIsMax = true;
-        }
-      }
+      return '无效攻击'
     }
+  }
 
+  tryProliferation(value) {
+    if (
+      value <= 0
+      || !this.belongsTo
+      || isNaN(value)
+      || this.belongsTo.fraction < 1
+      || this.content === this.maxSize
+    ) return false;
+    const point = this.belongsTo.fraction < value ? this.fraction : value;
+    this.content += point;
+    this.belongsTo.fraction -= point;
+    return true
   }
 }

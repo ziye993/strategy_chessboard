@@ -1,13 +1,19 @@
 
 import { renderHexagon } from "../tool/canvasUtils";
 import Block from "./block";
-import EventEmitter from "./EventEmitter";
-import { getDistance, getNsRandom, getLimitRandom } from "../tool/utils";
+// import EventEmitter from "./EventEmitter";
+import { getDistance, getNsRandom, getLimitRandom, isEqual } from "../tool/utils";
 import Role from "./role";
-import QLearnings from "../QLearning";
-import ProliferationQlearnins from "../QLearning/proliferation";
-const fMap = { 0: 1, 1: 2, 2: 0 }
+import AiAgent from '../QLearning'
 
+const fMap = { 0: 1, 1: 2, 2: 0 }
+const colorList = [
+  [0, 119, 255],
+  [255, 153, 0],
+  [153, 51, 255]
+]
+
+// 添加一个绝对定位position数据
 const getAvailableBlock = (block) => {
   const rendomNumber = 0;
   const newBlocks = [];
@@ -41,122 +47,105 @@ const getAvailableBlock = (block) => {
   });
   return resBlocks;
 }
-
+const gameConfig = {
+  blockInterval: 0.002,// 每次延申增加的概率
+  blockSize: 50,// 块大小
+  randomEmpty: 0.02,// 起始为空的概率
+  blockDefaultSize: 50, //默认大小
+  blockIntervalSeed: 0.7,//起始分裂概率
+  currentBlockInterval: 0.002,//当前分裂概率
+  divisionContent: 0,//分裂次数
+  mapHeightSize: 1500,//地图高度
+  mapWidthSize: 1500,//地图宽度
+  coverArea: 0.8,
+  lineColor: [255, 255, 255, 1],//线条颜色
+};
 //游戏主逻辑
 export default class Game {
-  constructor(ctx) {
-    this.config = {
-      blockInterval: 0.002,// 每次延申增加的概率
-      blockSize: 50,// 块大小
-      randomEmpty: 0.02,// 起始为空的概率
-      blockDefaultSize: 50, //默认大小
-      blockIntervalSeed: 0.7,//起始分裂概率
-      currentBlockInterval: 0.002,//当前分裂概率
-      divisionContent: 0,//分裂次数
-      mapHeightSize: 1500,//地图高度
-      mapWidthSize: 1500,//地图宽度
-      coverArea: 0.8,
-      lineColor: [255, 255, 255, 1],//线条颜色
-    };
-    this.blockConfig = {
-      color: [34, 34, 34, 1],
-    };
-    this.isStart = false; //游戏是否开始
-    this.round = 0; //游戏轮次
-    this.blocks = []; //游戏元素
-    this.currentActionRole = null; //当前行动角色
-    this.roles = []; //角色
+  constructor(ctx, releaseData) {
     this.ctx = ctx; //画布
-    this.emitter = new EventEmitter();
-    this.updateEvent = null;
-    this.count = 1;
-    this.selectBlocks = [];
+    this.releaseData = releaseData;
     this.winRole = null;
-    this.attackRobot = [];
-    this.proliferationRobot = [];
-    requestAnimationFrame(this.run.bind(this));
-  }
-
-  lineNei(block1, block2) {
-    block1.neighbors.push(block2);
-    block2.neighbors.push(block1)
+    this.updataAiInfo = () => { };
+    this.hitBlock = null;
+    this.update = null;
+    this.ctx.canvas.addEventListener('click', this.handleClick.bind(this));
+    const initres = this.init();
+    if (!initres) {
+      this.error = '初始化失败，请检查窗口大小';
+      releaseData({ error: this.error });
+      return
+    }
+    this.ai = new AiAgent(this);
+    this.renderCtx();
+    this.startGame();
   }
 
   reset() {
-    this.config = {
-      blockInterval: 0.002,// 每次延申增加的概率
-      blockSize: 50,// 块大小
-      randomEmpty: 0.02,// 起始为空的概率
-      blockDefaultSize: 50, //默认大小
-      blockIntervalSeed: 0.7,//起始分裂概率
-      currentBlockInterval: 0.002,//当前分裂概率
-      divisionContent: 0,//分裂次数
-      mapHeightSize: 1500,//地图高度
-      mapWidthSize: 1500,//地图宽度
-      coverArea: 0.8,
-      lineColor: [255, 255, 255, 1],//线条颜色
-    };
+    this.config = gameConfig;
     this.blockConfig = {
       color: [34, 34, 34, 1],
     };
-    this.isStart = false; //游戏是否开始
-    this.round = 0; //游戏轮次
+    this.isStart = true; //游戏是否开始
     this.blocks = []; //游戏元素
-    this.currentActionRole = null; //当前行动角色
+    this.aiBlocks = [];
+    this.currentActionRole = 0; //当前行动角色
     this.roles = []; //角色
-    this.emitter = new EventEmitter();
-    this.updateEvent = null;
-    this.count = 1;
     this.selectBlocks = [];
-    this.winRole = null;
+    this._winRole = null;
   }
 
-  init(isReset = false) {
-    if (isReset) this.reset();
+  init() {
+    this.reset();
     const randomEmpty = this.config.randomEmpty;
-    const { centers, length } = renderHexagon(this.ctx, 50);
-    this.blocks = getAvailableBlock(centers).map(center => {
-      const block = new Block(this.ctx, this);
+    const { centers } = renderHexagon(this.ctx, 50);
+    if (centers.length < 40) {
+      console.log(centers)
+      return false
+    }
+    this.aiBlocks = [];
+    // 初始化block
+    this.blocks = getAvailableBlock(centers).map((center, _key) => {
+      const block = new Block(this.ctx, _key);
       block.init(center, this.blockConfig);
+      this.aiBlocks.push(block);
       return block;
     }).filter(item => { return item.point.available && Math.random() > randomEmpty });
+    // 生成随机地图//通过block之间的连线体现
+    this.randomMap();
     //设置初始块
     this.config.blockInterval = (this.config.blockIntervalSeed - this.config.blockInterval) / this.blocks.length;
-    this.blocks = this.findNeighbors();
-
-    //生成三个不同的随机数
+    //生成三个不同的随机数// 用作玩家起始位置
     const r = getNsRandom(3, 0, this.blocks.length - 1);
     this.roles = r.map((item, index) => {
       const role = new Role({
         block: [this.blocks[item]],
         name: `角色${index + 1}`,
-        emitter: this.emitter,
-        ctx: this.ctx,
-        game: this,
         isRobot: true,
-      })
+        color: colorList[index],
+        nextRole: this.nextRole.bind(this)
+      });
       this.blocks[item].belongsTo = role;
-      this.QLearnings = new QLearnings(this);
-      this.proliferationRobot.push(new ProliferationQlearnins(this, role))
       return role;
     });
+    // 设置block邻居的位置索引//可能会用做ai的状态输入的一部分
     this.blocks.forEach((block, index) => {
       block.initNeighborsPositionIndex();
-      if (block.belongsTo) return;
-      this.emitter.on('division', block.division.bind(block));
     });
+    this.winRole = null;
+    this.renderCtx();
+    return true
   }
-
-  endAction() {
-    this.roles.forEach(role => { role.endAction() });
-  }
-
+  // 绑定点击事件
   handleClick(event) {
     const rect = this.ctx.canvas.getBoundingClientRect();
-    this.emitter.emit(['attacked', 'division', 'rolePointChange', 'pointProliferation', 'selecteds'], {
+    const clickInfo = {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
-    }, this.selectBlock);
+    }
+    console.log(event, rect)
+    this.hitBlock = this.blocks.find(_ => _.isSelect(clickInfo))?.hit(this.hitBlock) || this.hitBlock;
+    console.log(this.blocks.find(_ => _.isSelect(clickInfo)))
   }
   // 查找邻居
   findnei(currentBlock) {
@@ -188,14 +177,14 @@ export default class Game {
     });
   }
   // 查找邻居
-  findNeighbors() {
+  randomMap() {
     let startRandom = getLimitRandom(0, this.blocks.length, true);
     let startBlock = this.blocks[startRandom];
-    // startBlock.color = [255, 0, 0, 1]
     let _findnei = this.findnei.bind(this);
-    _findnei(startBlock);
 
+    _findnei(startBlock);
     let newBlocks = this.blocks.filter(block => block.neighbors.length > 0);
+    // 必须是可用地图
     if (newBlocks.length > (this.config.coverArea * this.blocks.length)) {
       newBlocks.forEach(block => {
         block.neighbors.forEach(nei => {
@@ -204,14 +193,11 @@ export default class Game {
           } else if (!block.neighbors.includes(nei)) {
             block.neighbors.push(nei);
           }
-          // if (!nei.neighbors.includes(block) || !block.neighbors.includes(nei)) {
-          //   block.color=[255,0,0,1];
-          //   nei.color=[255,0,0,1];
-          // }
         });
 
       });
-      return newBlocks;
+      this.blocks = newBlocks
+      return;
     }
 
     newBlocks = null;
@@ -220,108 +206,77 @@ export default class Game {
     _findnei = null;
     this.blocks.forEach(block => { block.neighbors = []; block.visited = false });
     this.config.divisionContent = 0;
-    return this.findNeighbors();
+    this.randomMap();
+  }
+  // 是否有胜利者
+  isWin() {
+    const roles = this.roles.filter(_ => _.blocks.length > 0);
+    if (roles.length > 1) {
+      return null
+    } else {
+      return roles[0];
+    }
   }
 
-  // 游戏主循环
-  run() {
-    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-    this.blocks.forEach((block) => {
-      block.renderBlock();
-    });
-    const loseRole = this.roles.find(role => role.blocks.length === 0);
-    if (loseRole) {
-      this.emitter.emit('lose', loseRole);
-      this.emitter.clear(['attacked', 'division', 'rolePointChange', 'pointProliferation', 'selecteds']);
+  // 向外界更新数据
+  updataState() {
+    const newDate = {
+      currentRole: this.roles?.[this?.currentActionRole]?.getState(),
+      isStart: this.isStart,
+      winRole: this.winRole,
+      roles: this.roles.map(_ => ({ name: _.name, color: _.color })),
+      aiInfo: this?.ai?.getAiInfo?.()
     }
-    requestAnimationFrame(this.run.bind(this));
-  }
-  // 开始游戏
-  start() {
-    this.ctx.canvas.addEventListener('click', this.handleClick.bind(this));
-    this.isStart = true;
-    this.roles[0].startAction();
-    this.currentActionRole = 0;
-    this.updateEvent();
-    this.updataEmitter();
-    if (this.roles[this.currentRole].isRobot) {
-      this.attackRobot.divisionAction();
-      this.nextSetp()
+    if (!isEqual(newDate, this.update)) {
+      this.update = newDate;
+      this.releaseData(newDate)
     }
   }
-  // 下一个角色行动
-  nextRole() {    
+  //渲染
+  renderCtx() {
+    if (this.isStart) {
+      this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+      this.blocks.forEach(_ => _.renderBlock());
+      this.updataState();
+      this.winRole = this.isWin();
+      if (this.winRole) {
+        return;
+      }
+      requestAnimationFrame(this.renderCtx.bind(this));
+    }
+
+  }
+  // 下一步
+  nextStep() {
     if (!this.isStart) {
       return;
     }
+    this.roles?.[this?.currentActionRole]?.nextStep();
+  }
+  // 下一个角色行动
+  nextRole(value) {
     this.currentActionRole += 1;
     if (this.currentActionRole >= this.roles.length) {
       this.currentActionRole = 0;
     }
-    const nextRole = this.roles[this.currentActionRole];
-    this.emitter.clear(['division', 'attacked', 'pointProliferation', 'selecteds']);
-    this.blocks.forEach(block => {
-      block.selected = false;
-      if (!block.belongsTo) {
-        this.emitter.on("division", block.division.bind(block))
-      } else if (block.belongsTo && (block.belongsTo !== nextRole)) {
-        this.emitter.on("attacked", block.attacked.bind(block))
-      }
-    });
-    nextRole.startAction();
-    this.updateEvent();
-    if (this.roles[this.currentRole].isRobot) {
-      this.attackRobot.divisionAction();
-      this.nextSetp()
+    if (this.roles[this.currentActionRole].blocks.length <= 0) {
+      return
     }
+    this.roles[this.currentActionRole].attack();
   }
-  // 下一个步骤
-  nextSetp() {
-    if (!this.isStart) {
-      return;
-    }
-    if (this.roles[this.currentActionRole].isRobot) {
-
-    }
-    const lengthList = this.roles.filter(role => { return role.blocks.length !== 0 });
-    console.log(lengthList, 'lengthList')
-    if (lengthList.length === 1) {
-
-      //win
-      lengthList[0].win();
-      return;
-    }
-    this.roles[this.currentActionRole].nextSetp();
+  // 更新ai数据
+  setAiInfo(info) {
+    this.ai.setAiInfo(info)
   }
-  //更新数据到外部
-  update(event) {
-    const self = this;
-    this.updateEvent = () => {
-      event(self)
-    };
+  // 开始游戏
+  startGame() {
+    this.isStart = true;
+    this.currentActionRole = 0;
+    this.roles?.[this?.currentActionRole]?.attack();
   }
-  // 更新事件
-  updataEmitter() {
-    this.emitter.clear(['division', 'attacked', 'selecteds']);
-    const currentRole = this.roles[this.currentActionRole];
-    this.blocks.forEach((block, index) => {
-      if (!block.belongsTo) {// 空板块
-        this.emitter.on("division", block.division.bind(block));
-      } else if (block.belongsTo && (block.belongsTo !== currentRole)) { //敌方板块
-        this.emitter.on("attacked", block.attacked.bind(block))
-      } else if (block.belongsTo === currentRole) {// 己方板块
-        this.emitter.on("selecteds", block.selecteds.bind(block));
-      }
-    });
-  }
-
-  // 已经选择板块
-  pushSelctBlockList(block) {
-    if (this.selectBlocks.length < 2) {
-      this.selectBlocks.push(block);
-      return;
-    }
-    this.selectBlocks.push(block);
-    this.selectBlocks.shift();
+  // 新游戏
+  newGame() {
+    this.init();
+    this.startGame();
   }
 }

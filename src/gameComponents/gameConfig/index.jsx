@@ -33,7 +33,7 @@ const GameConfig = () => {
               type="text"
               id={key}
               name={key}
-              value={value.toString()}
+              defaultValue={value.toString()}
               onChange={handleChange}
               style={{ width: 100, marginLeft: 10 }}
             />
@@ -45,7 +45,7 @@ const GameConfig = () => {
               min={0}
               max={key.includes('Interval') || key.includes('randomEmpty') || key.includes('coverArea') ? 1 : 2000}
               step={key.includes('Interval') || key.includes('randomEmpty') || key.includes('coverArea') ? 0.001 : 1}
-              value={value}
+              defaultValue={value}
               onChange={handleChange}
               style={{ width: 150, marginLeft: 10 }}
             />
@@ -57,4 +57,4 @@ const GameConfig = () => {
   );
 };
 
-export default GameConfig;    
+export default GameConfig;   

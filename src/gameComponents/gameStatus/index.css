@@ -52,24 +52,27 @@
   width: 150px;
 }
 
-.currentstep{
+.currentstep {
   width: 100px;
   white-space: nowrap;
   transition: all.3s ease-in-out;
   opacity: 1;
 }
+
 .stepinfo:hover>.currentstep {
   width: 0px;
   overflow: hidden;
   opacity: 0;
 }
-.nextstep{
+
+.nextstep {
   width: 0px;
   transition: all.3s ease-in-out;
   opacity: 0;
   white-space: nowrap;
 }
-.stepinfo:hover>.nextstep{
+
+.stepinfo:hover>.nextstep {
   width: 150px;
   opacity: 1;
 }
@@ -93,7 +96,8 @@
   /* overflow: auto; */
   opacity: 1;
 }
-.pointnumtext{
+
+.pointnumtext {
   width: 100px;
   opacity: 1;
   transition: all.3s ease-in-out;
@@ -101,7 +105,107 @@
   text-align: center;
   display: block;
 }
-.pointinfo:hover>.pointnumtext{
+
+.pointinfo:hover>.pointnumtext {
   width: 0px;
-  opacity: 0; 
+  opacity: 0;
+}
+
+/* ///////////////////////////////////////////////////// */
+.status-container {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  overflow-x: auto;
+  background-color: #1E1E1E;
+  border-radius: 10px;
+  width:230px;
+  box-sizing: border-box;
+}
+
+.status-container i {
+  cursor: pointer;
+}
+
+.status-container::-webkit-scrollbar {
+  display: none;
+}
+
+.status-text-content {
+  font-size: 16px;
+  color: #FFFFFF;
+  /* line-height: 24px; */
+  margin-left: 0px;
+
+}
+
+.status-card {
+  flex: 0 0 0;
+  background-color: #2D2D2D;
+  border-radius: 8px;
+  border-left: 4px solid;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* .status-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+} */
+
+.status-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+
+}
+
+.status-details {
+  margin-bottom: 0px;
+}
+
+.status-name {
+  color: #FFFFFF;
+  font-size: 16px;
+  margin: 0 0 4px;
+  font-weight: 500;
+}
+
+.status-count {
+  color: #AAAAAA;
+  font-size: 14px;
+  margin: 0;
+}
+
+.status-percentage {
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: auto;
+  margin-bottom: 5px;
+}
+
+.status-edit {
+  margin: 20px 0 0 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  color: #FFFFFF;
+  font-size: 24px;
+}
+
+.actionComp {
+  cursor: pointer;
+}
+
+.actionCompBar {
+  position: fixed;
+  bottom: 20px;
+  width: 9.5vw;
+}
+.status-timeout{
+  font-size: 18px;
 }

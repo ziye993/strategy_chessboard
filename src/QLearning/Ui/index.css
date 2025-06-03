@@ -1,5 +1,5 @@
 .container {
-  max-width: 1200px;
+  max-width: 88vw;
   margin: 0 auto;
   position: fixed;
   top: 0;
@@ -342,4 +342,16 @@ footer {
   text-align: center;
   font-size: 0.875rem;
   color: var(--text-secondary);
+}
+.fastAiSetting{
+  opacity: 0;
+  
+  height: 50px;
+  font-size: 24xp;
+  line-height: 50px;
+  color: #8b8888;
+  transition: all 0.5s;
+}
+.aiSetting:hover>.fastAiSetting{
+    opacity: 1;
 }
