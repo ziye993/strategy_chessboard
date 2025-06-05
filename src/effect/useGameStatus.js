@@ -8,14 +8,14 @@ const useGameStatus = (ctx) => {
   useEffect(() => {
     if (ctx.current && !game.current) {
       const getState = (newState) => {
-        setGameInfo(prev => ({ ...prev, ...newState }));
+        setGameInfo(newState);
       };
-      console.log(ctx.current.addEventListener)
       game.current = new Game(ctx.current, getState);
       if (game.current.error) {
         console.error(game.current.error)
       }
     }
+    console.log('11')
   }, [ctx]);
 
   const setAiInfo = game.current?.ai?.setAiInfo.bind(game.current?.ai);

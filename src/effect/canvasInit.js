@@ -20,7 +20,7 @@ export default function useCanvasInit(canvas) {
         canvas.current.width = rect.width * dpr;
         canvas.current.height = rect.height * dpr;
       }
-      console.dir(canvas.current.getBoundingClientRect());
+      console.dir(parent);
       // canvas.current.width = 2000;
       // canvas.current.height = 2000;
       // canvas.current.style.marginTop = rect.height * dpr * 0.1;

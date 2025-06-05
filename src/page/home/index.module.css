@@ -1,0 +1,90 @@
+/* 应用容器 */
+.app-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: all 0.5s;
+}
+
+/* 按钮容器 */
+.button-container {
+    display: flex;
+    gap: 4rem;
+    align-items: center;
+    padding: 2rem;
+}
+
+/* 通用按钮样式 */
+.btn {
+    border: none;
+    border-radius: 25px;
+    padding: 1rem 2rem;
+    font-size: 4rem;
+    font-weight: 1000;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 250px;
+    height: 250px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* 在线按钮样式 */
+.online-btn {
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    color: white;
+}
+
+.online-btn:hover {
+    background: linear-gradient(135deg, #7a21db 0%, #3585fc 100%);
+}
+
+/* 本地按钮样式 */
+.local-btn {
+    background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+    color: #1a1a2e;
+}
+
+.local-btn:hover {
+    background: linear-gradient(135deg, #10f2fe 0%, #5fbcfe 100%);
+}
+
+/* 退出按钮样式 */
+.exit-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.exit-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* 响应式设计 */
+@media (min-width: 768px) {
+    /* .button-container {
+        flex-direction: row;
+        justify-content: center;
+    } */
+}

@@ -69,7 +69,9 @@ export default class Game {
     this.updataAiInfo = () => { };
     this.hitBlock = null;
     this.update = null;
-    this.ctx.canvas.addEventListener('click', this.handleClick.bind(this));
+    this.animation = false;
+    this._winRole = null
+
     const initres = this.init();
     if (!initres) {
       this.error = '初始化失败，请检查窗口大小';
@@ -79,6 +81,19 @@ export default class Game {
     this.ai = new AiAgent(this);
     this.renderCtx();
     this.startGame();
+    this.eventClick = this.handleClick.bind(this);
+    this.ctx.canvas.addEventListener('click', this.eventClick);
+  }
+
+  set winRole(value) {
+    if (value) {
+      this.updataState();
+      this._winRole = value
+    }
+  }
+
+  get winRole() {
+    return this._winRole;
   }
 
   reset() {
@@ -100,7 +115,6 @@ export default class Game {
     const randomEmpty = this.config.randomEmpty;
     const { centers } = renderHexagon(this.ctx, 50);
     if (centers.length < 40) {
-      console.log(centers)
       return false
     }
     this.aiBlocks = [];
@@ -133,7 +147,7 @@ export default class Game {
       block.initNeighborsPositionIndex();
     });
     this.winRole = null;
-    this.renderCtx();
+    // this.renderCtx();
     return true
   }
   // 绑定点击事件
@@ -143,9 +157,7 @@ export default class Game {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
     }
-    console.log(event, rect)
     this.hitBlock = this.blocks.find(_ => _.isSelect(clickInfo))?.hit(this.hitBlock) || this.hitBlock;
-    console.log(this.blocks.find(_ => _.isSelect(clickInfo)))
   }
   // 查找邻居
   findnei(currentBlock) {
@@ -224,6 +236,7 @@ export default class Game {
       currentRole: this.roles?.[this?.currentActionRole]?.getState(),
       isStart: this.isStart,
       winRole: this.winRole,
+      animation: this.animation,
       roles: this.roles.map(_ => ({ name: _.name, color: _.color })),
       aiInfo: this?.ai?.getAiInfo?.()
     }
@@ -234,17 +247,20 @@ export default class Game {
   }
   //渲染
   renderCtx() {
-    if (this.isStart) {
-      this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-      this.blocks.forEach(_ => _.renderBlock());
-      this.updataState();
-      this.winRole = this.isWin();
-      if (this.winRole) {
-        return;
-      }
-      requestAnimationFrame(this.renderCtx.bind(this));
-    }
 
+    setInterval(() => {
+      if (this.isStart && this.blocks.length) {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        this.blocks.forEach(_ => _.renderBlock(this.animation));
+        this.updataState();
+        this.winRole = this.isWin();
+        // if (this.winRole) {
+        //   return;
+        // }
+      }
+    }, 1000);
+
+    // requestAnimationFrame(this.renderCtx.bind(this));
   }
   // 下一步
   nextStep() {
@@ -266,6 +282,7 @@ export default class Game {
   }
   // 更新ai数据
   setAiInfo(info) {
+    this.animation = info.animation;
     this.ai.setAiInfo(info)
   }
   // 开始游戏

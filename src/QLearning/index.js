@@ -7,31 +7,52 @@ export default class AiAgent {
     window.game = game
     this.attackRobot = new AttackAgent(game); //进攻机器人 多少个角色就是多少个机器人
     this.proliferationRobot = new PftAgent(game); //加点机器人 多少个角色就是多少个机器人
-    this.targetTrainNumber = 10000; // 对句数
+    this.targetTrainNumber = 1000; // 对句数
     this.currentTrainNumber = 0; //
     this.training = false;
-    this.num = 0;
+    // this.num = 0;
     this.start = false;
     this.isInit = false;
     this.demonstrate = false;
     this.interval = 1000;
-    this.timeId = null
+    this.timeId = null;
+    this.loadConfig();
   }
 
-  initToStorege() {
-    this.targetTrainNumber = 10000; // 对句数
-    this.currentTrainNumber = 0; //
-    this.training = false;
-    this.num = 0;
-    this.interval = 1000;
+  saveConfig() {
+    localStorage.setItem("aiConfig", JSON.stringify({
+      targetTrainNumber: this.targetTrainNumber,
+      currentTrainNumber: this.currentTrainNumber,
+      interval: this.interval,
+      attackRobot: {
+        accumulatedRewards: this.attackRobot.accumulatedRewards,
+        accumulatedPunishment: this.attackRobot.accumulatedPunishment
+      },
+      proliferationRobot: {
+        accumulatedRewards: this.proliferationRobot.accumulatedRewards,
+        accumulatedPunishment: this.proliferationRobot.accumulatedPunishment
+      }
+    }))
+  }
 
+  loadConfig() {
+    const configStr = localStorage.getItem('aiConfig');
+    try {
+      const { targetTrainNumber, currentTrainNumber, interval } = JSON.parse(configStr);
+      this.targetTrainNumber = targetTrainNumber || this.targetTrainNumber;
+      this.currentTrainNumber = currentTrainNumber || this.currentTrainNumber;
+      this.interval = interval;
+
+    } catch (error) {
+
+    }
   }
 
   setInterval(type) {
     type > 0 ? (this.interval += 100) : (this.interval -= 100);
-    console.log(this.demonstrate)
     if (this.demonstrate) {
       clearInterval(this.timeId);
+      this.demonstrate = false;
       this.startDemonstrate();
     }
   }
@@ -40,7 +61,6 @@ export default class AiAgent {
     if (this.demonstrate) {
       clearInterval(this.timeId);
       this.demonstrate = false;
-      this.startDemonstrate()
       return
     }
     this.demonstrate = true;
@@ -54,12 +74,12 @@ export default class AiAgent {
   }
 
   setAiInfo(info) {
-    const { targetTrainNumber, currentTrainNumber, start, training, demonstrate, interval } = info;
+    const { targetTrainNumber, currentTrainNumber, start, training, demonstrate, interval, } = info;
     this.targetTrainNumber = targetTrainNumber || this.targetTrainNumber;
     this.currentTrainNumber = currentTrainNumber || this.currentTrainNumber;
     this.start = start || this.start
     this.training = training || this.training
-    this.demonstrate = demonstrate || this.demonstrate
+    this.demonstrate = demonstrate || this.demonstrintervalate
     this.interval = interval || this.interval
     // this.attackRobot.setAiInfo(attackRobot);
     // this.proliferationRobot.setAiInfo(proliferationRobot);
@@ -121,7 +141,7 @@ export default class AiAgent {
     let prtEnd;
     if (role.actionType === 0) {
       prtEnd = await this.attackRobot.randomAction();
-      if(this.game.winRole){
+      if (this.game.winRole) {
         this.initData();
         return
       }
@@ -136,8 +156,10 @@ export default class AiAgent {
   async train(run) {
     if (this.training || this.start) return;
     if (!this.isInit) {
-      await Promise.all([this.attackRobot.initAi(), this.proliferationRobot.initAi()]);
-      await Promise.all([this.attackRobot.loadModel(), this.proliferationRobot.loadModel()])
+      await this.attackRobot.initAi();
+      await this.attackRobot.loadModel();
+      await this.proliferationRobot.initAi();
+      await this.proliferationRobot.loadModel();
       this.isInit = true
     }
     // 模型初始化  &  加载已有模型
@@ -163,6 +185,7 @@ export default class AiAgent {
             break
           }
           attEnd = await this.attackRobot.action();
+          this.game.winRole = this.game.isWin();
         }
         (typeof run === 'function') && run?.();
         this.game.nextStep();
@@ -186,15 +209,22 @@ export default class AiAgent {
         this.initData();
         continue
       }
-      await Promise.all([this.attackRobot.startTrainWorker(), this.proliferationRobot.startTrainWorker()]);
+      // await this.attackRobot.startTrainWorker();
+      // await this.proliferationRobot.startTrainWorker();
+      try {
+        await Promise.all([this.attackRobot.startTrainWorker(), this.proliferationRobot.startTrainWorker()])
+      } catch (error) {
+      }
       this.currentTrainNumber++;
       this.initData();
       this.attackRobot.accumulatedPunishment = Math.floor(this.attackRobot.accumulatedPunishment);
       this.attackRobot.accumulatedRewards = Math.floor(this.attackRobot.accumulatedRewards);
       this.proliferationRobot.accumulatedPunishment = Math.floor(this.proliferationRobot.accumulatedPunishment);
       this.proliferationRobot.accumulatedRewards = Math.floor(this.proliferationRobot.accumulatedRewards);
+      this.saveConfig();
       if (this.currentTrainNumber % 10 === 0) {
-        await Promise.all([this.attackRobot.builderModel(), this.proliferationRobot.builderModel()]);
+        await this.attackRobot.builderModel();
+        await this.proliferationRobot.builderModel();
       }
     }
 

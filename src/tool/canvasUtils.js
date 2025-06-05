@@ -1,6 +1,6 @@
 
 //画正六边形
-export function drawHexagon(ctx, center, color, content = 0, fill = 0) {
+export function drawHexagon(ctx, center, color, content = 0, fill = 0, changeTip, tipTop) {
   ctx.shadowOffsetX = -5;
   ctx.shadowOffsetY = -5;
   ctx.shadowBlur = 5;
@@ -24,10 +24,8 @@ export function drawHexagon(ctx, center, color, content = 0, fill = 0) {
   ctx.font = '22px Arial';
   ctx.fillStyle = '#FFF';
   content && ctx.fillText(content, center.x, center.y + 1);
-
+changeTip && ctx.fillText(changeTip, center.x, tipTop)
   // ctx.fillText(`${center.relativeY}-${center.relativeX}`, center.x, center.y - 20)
-
-
 }
 
 function ctxDrawHexagon(ctx, vert, color, fill) {

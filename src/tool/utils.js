@@ -240,7 +240,10 @@ export function workerPromise(worker, type, timeOut, ...data) {
         res(e.data.data);
         worker.onmessage = undefined
       }
-      else console.warn(`id 错误: e.id:${e.data.id}, random.id:${id}`);
+      else {
+        console.warn(`id 错误: e.id:${e.data.id}, random.id:${id}`);
+        console.log(e)
+      };
 
     };
     worker.postMessage({ type: type, data: [...data], id });

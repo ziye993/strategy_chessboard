@@ -6,7 +6,7 @@ export default class Dqn {
   constructor(name, config = {}) {
     this.name = name;
     this.attWorker = new Worker(new URL('./advanced_worker.js', import.meta.url));
-    this.attWorker.postMessage({ type: 'getStorege', data: localStorage.getItem(this.name) });
+    // this.attWorker.postMessage({ type: 'getStorege', data: localStorage.getItem(this.name) });
     this.attWorker.onmessage = (e) => { };
     const _woreker = this.attWorker;
     // this.gameAi = new GameAITrainer({ actionSpaceSize: 150150, stateShape: [13 * 150] });
@@ -30,7 +30,7 @@ export default class Dqn {
   // 初始化
   async initAi() {
     // aiLog(`开始初始化 ${this.name};`)
-    const data = await this.gameAi.init({ actionSpaceSize: Number("" + this.mapSize + "" + this.mapSize), stateShape: [this.characteristicSize * this.mapSize] });
+    const data = await this.gameAi.init({ actionSpaceSize: this.actionSpaceSize, stateShape: [this.characteristicSize * this.mapSize] });
     // aiLog(`初始化 ${this.name} 完成:`, data);
     return data
   }

@@ -1,25 +1,87 @@
 import * as tf from '@tensorflow/tfjs';
-import { aiLog } from '../tool/utils';
 
-// eslint-disable-next-line no-restricted-globals
-const _self = self;
-let storegeData = '';
-const localStorage = {
-  setItem: (str, data) => {
-    _self.postMessage({
-      type: 'setItem',
-      data: {
-        path: str,
-        data
-      },
-    })
-  },
-  getItem: () => {
-    return storegeData
+class IndexedDBUtils {
+  constructor(dbName = 'DQNStorege', storeName = 'dqn', version = 1) {
+    this.dbName = dbName;
+    this.storeName = storeName;
+    this.version = version;
+    this.db = null;
+  }
+
+  // 初始化数据库连接
+  async initDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.dbName, this.version);
+
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(this.storeName)) {
+          db.createObjectStore(this.storeName, { keyPath: 'id' });
+        }
+      };
+
+      request.onsuccess = (event) => {
+        this.db = event.target.result;
+        resolve();
+      };
+
+      request.onerror = (event) => {
+        reject(new Error(`数据库连接失败: ${event.target.error}`));
+      };
+    });
+  }
+
+  // 存数据（需要 id 和 data）
+  async setData(id, data) {
+    if (!this.db) await this.initDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([this.storeName], 'readwrite');
+      const store = transaction.objectStore(this.storeName);
+      const request = store.put({ id, ...data });
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(new Error(`数据存储失败: ${request.error}`));
+    });
+  }
+
+  // 取数据（根据 id）
+  async getData(id) {
+    if (!this.db) await this.initDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([this.storeName], 'readonly');
+      const store = transaction.objectStore(this.storeName);
+      const request = store.get(id);
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(new Error(`数据读取失败: ${request.error}`));
+    });
+  }
+
+  // 关闭数据库连接
+  close() {
+    if (this.db) {
+      this.db.close();
+      this.db = null;
+    }
   }
 }
 
-export class GameAITrainer {
+const store = new IndexedDBUtils();
+// eslint-disable-next-line no-restricted-globals
+const _self = self;
+
+const localStorage = {
+  setItem: async (str, data) => {
+    await store.setData(str, data)
+  },
+  getItem: async (str) => {
+    return await store.getData(str)
+  }
+}
+
+class GameAITrainer {
   constructor(param) {
     // 核心函数
     this.actionSpaceSize = param.actionSpaceSize;
@@ -36,15 +98,13 @@ export class GameAITrainer {
     const model = tf.sequential();
     model.add(tf.layers.dense({
       inputShape: this.stateShape,
-      units: this.hiddenLayers[0],
+      units: 64,
       activation: 'relu'
     }));
-    for (let i = 1; i < this.hiddenLayers.length; i++) {
-      model.add(tf.layers.dense({
-        units: this.hiddenLayers[i],
-        activation: 'relu'
-      }));
-    }
+    model.add(tf.layers.dense({
+      units: 32,
+      activation: 'relu'
+    }));
     model.add(tf.layers.dense({
       units: this.actionSpaceSize,
       activation: 'linear'
@@ -68,7 +128,7 @@ export class GameAITrainer {
     epsilonMin = 0.8,
     memorySize = 1000,
     batchSize = 64,
-    trainingInterval = 10,
+    trainingInterval = 64,
     targetUpdateInterval = 100
   }) {
 
@@ -95,7 +155,6 @@ export class GameAITrainer {
     this.trainingInterval = trainingInterval;
     this.targetUpdateInterval = targetUpdateInterval;
     this.optimizer = tf.train.adam(learningRate);
-
   }
 
   // 更新目标网络
@@ -105,29 +164,7 @@ export class GameAITrainer {
   }
   // 记录经验
   async recordExperience(action, reward, state, nextState, done) {
-    // const state = this.getGameStatus();
     this.memory.push({ state, action, reward, nextState, done });
-
-    // 限制经验回放缓冲区大小
-    // if (this.memory.length > this.memorySize) {
-    this.memory.shift();
-    // }
-
-    // 定期训练
-    this.trainingStep++;
-    if (this.trainingStep % this.trainingInterval === 0 && this.memory.length >= this.batchSize) {
-      await this._trainModel();
-    }
-
-    // 定期更新目标网络
-    if (this.trainingStep % this.targetUpdateInterval === 0) {
-      this._updateTargetModel();
-    }
-
-    // 衰减探索率
-    // if (this.epsilon > this.epsilonMin) {
-    //   this.epsilon *= this.epsilonDecay;
-    // }
   }
 
 
@@ -144,7 +181,7 @@ export class GameAITrainer {
   }
 
   //保存模型初始化参数
-  _saveOtherParam(path) {
+  async _saveOtherParam(path) {
     const param = {
       actionSpaceSize: this.actionSpaceSize,
       stateShape: this.stateShape,
@@ -159,29 +196,32 @@ export class GameAITrainer {
       trainingInterval: this.trainingInterval,
       targetUpdateInterval: this.targetUpdateInterval,
     }
-    localStorage.setItem(path, JSON.stringify(param))
+    await localStorage.setItem(path, JSON.stringify(param))
   }
   // 保存模型
   async saveModel(path) {
-    this._saveOtherParam(path)
+    await this._saveOtherParam(path)
+    await this.targetModel.save(`indexeddb://${path}-backup`);
     return await this.model.save(`indexeddb://${path}`);
   }
 
   // 加载模型
   async loadModel(path) {
-    let model;
+    let model, targetModel;
     try {
       model = await tf.loadLayersModel(`indexeddb://${path}`);
+      targetModel = await tf.loadLayersModel(`indexeddb://${path}-backup`);
+
     } catch (error) {
 
     }
-    if (!model) {
+    if (!model || !targetModel) {
       console.error(`模型未找到：${path}`)
       return false
     }
     this.model = model;
-    this.targetModel = model;
-    const otherParamStr = localStorage.getItem(path);
+    this.targetModel = targetModel;
+    const otherParamStr = await localStorage.getItem(path);
     let otherParam = {};
     try {
       otherParam = JSON.parse(otherParamStr);
@@ -259,21 +299,17 @@ export class GameAITrainer {
   }
   // 训练模型
   async _trainModel() {
+    // 每批训练64条
     while (this.memory.length >= 64) {
       await this._trainModel_64();
+      this.trainingStep++;
+      // 定期更新q网络
+      this._updateTargetModel();
     }
-    if (this.epsilon > 0.01) {
+    // 探索率衰减
+    if (this.epsilon > 0) {
       this.epsilon = this.epsilon * this.epsilonDecay;
-    } else if (this.epsilon < 0.01 && this.epsilon > 0.005) {
-      console.warn(this.epsilon, 'this.epsilon');
-      this.epsilon = 0.05
     }
-    // nextGpu = tf.memory();
-    // console.log(`
-    //    使用:${nextGpu.numBytesInGPU};
-    //    分配:${nextGpu.numBytesInGPUAllocated};
-    // 空闲:${nextGpu.numBytesInGPUFree};
-    // `)
   }
 
   // 选择动作（带ε-贪婪策略）
@@ -296,7 +332,7 @@ export class GameAITrainer {
           const stateTensor = tf.tensor2d([state]);
           const qValues = this.model.predict(stateTensor);
           const action = qValues.argMax(1).dataSync()[0];
-          tf.dispose([state]);
+          // tf.dispose([state]);
           return action;
         })
       }
@@ -396,8 +432,8 @@ _self.onmessage = async function (e) {
       break;
 
     case 'getStorege':
-      storegeData = e.data.data;
-      postMessage(e, true);
+      // storegeData = e.data.data;
+      // postMessage(e, true);
       break;
 
     case 'endTrain':

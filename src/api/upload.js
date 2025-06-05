@@ -1,3 +1,5 @@
+import { data } from "@tensorflow/tfjs";
+
 const api = 'http://localhost:3001/api/saveJson'
 /**
  * 极简JSON上传函数
@@ -24,4 +26,4 @@ export async function postJSON(data,) {
     console.error('JSON上传失败:', error);
     throw error;
   }
-}  
+}

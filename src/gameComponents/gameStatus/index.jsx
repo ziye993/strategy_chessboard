@@ -141,15 +141,19 @@ const StatusDisplay = (props) => {
       <GameStatusIcon icon={<i className="bi bi-file-plus"></i>}>剩余点数: {gameInfo?.currentRole?.fraction}</GameStatusIcon>
       {/* <GameStatusProgress type={gameType}>0</GameStatusProgress> */}
       <div className="status-edit">
-        <i class="bi bi-chevron-bar-right" onClick={aiInfo?.training ? nextStep : null}></i>
+        <i class="bi bi-chevron-bar-right" onClick={aiInfo?.training ? null : stepTrain}></i>
         <i class="bi bi-arrow-clockwise" onClick={newGame}></i>
       </div>
+    </GameStateBar>
+
+    <GameStateBar type={gameType}>
+      <GameStatusIcon type={gameType} onClick={() => { setAiInfo({ animation: false }) }}>动画</GameStatusIcon>
     </GameStateBar>
 
     <GameStateBar type={aiType}>
       <GameStatusIcon type={aiInfo?.start ? 'runing' : 'unStart'} icon={<i className="bi bi-cpu"></i>}> AI训练 </GameStatusIcon>
       <h3 className="status-name">目标：{aiInfo?.targetTrainNumber}</h3>
-      <GameStatusProgress type={aiType}>{Math.floor((aiInfo?.currentTrainNumber || 0) / (aiInfo?.targetTrainNumber || 1))}</GameStatusProgress>
+      <GameStatusProgress type={aiType}>{Math.floor((aiInfo?.currentTrainNumber) / (aiInfo?.targetTrainNumber || 1) * 100)}</GameStatusProgress>
       <h3 className="status-name">奖/惩差</h3>
       <p className="status-count">attackRobot：{aiInfo?.attackRobot?.accumulatedRewards - aiInfo?.attackRobot?.accumulatedPunishment}</p>
       <p className="status-count">pftRobot：{aiInfo?.proliferationRobot?.accumulatedRewards - aiInfo?.proliferationRobot?.accumulatedPunishment}</p>

@@ -1,4 +1,4 @@
-import { getNewUUID, getDistance } from "../tool/utils";
+import { getNewUUID, getDistance, isEqual } from "../tool/utils";
 import { drawHexagon, drawLine, getVertexs } from "../tool/canvasUtils";
 
 const gearContent = {
@@ -28,11 +28,12 @@ function findNearestPoints(arr1, arr2) {
   return [{ ...arr1[index1] }, { ...arr2[index2] }]
 }
 
+
 //游戏元素 //正六边形的块
 export default class Block {
   constructor(ctx, _key) {
     this._key = _key;
-    this.content = 0;
+    this._content = 0;
     this.color = [34, 34, 34, 1];
     this.id = null;
     this.point = { x: 0, y: 0 };
@@ -44,6 +45,19 @@ export default class Block {
     this.ctx = ctx;
     this.selected = false;
     this.isDisadvantaged = false;
+
+    this.currentRenderStatus = {
+      content: 0,
+      remainingFrames: 0,
+      tipTop: this.point.y,
+      changeTip: '',
+    }
+    this.targetRenderStatus = {
+      content: this._content,
+      remainingFrames: 120,
+      tipTop: this.point.y - 50,
+      changeTip: ''
+    }
     // this.game = game;
     // this.contentIsMax = false;
     // this.maxType = this.maxSize > 10 ? 2 : (this.maxSize > 6 ? 1 : 0);
@@ -51,6 +65,19 @@ export default class Block {
 
   get key() {
     return this._key
+  }
+
+  get content() {
+    return this._content;
+  }
+
+  set content(value) {
+    this.targetRenderStatus.content = value;
+    this.currentRenderStatus.remainingFrames = 0;
+    this.currentRenderStatus.changeTip = (this._content - value) + '' || null;
+    this.currentRenderStatus.tipTop = this.point.y;
+    this.targetRenderStatus.tipTop = this.point.y - 50;
+    this._content = value;
   }
 
   initNeighborsPositionIndex() {
@@ -87,14 +114,36 @@ export default class Block {
     this.color = config.color;
   }
 
-  renderBlock() {
+  computerMeanValue(currentValue, targetValue, sliceNum) {
+
+    if (sliceNum === 0) {
+      return currentValue
+    }
+    const resValue = { ...currentValue };
+    Object.keys(currentValue).forEach(_ => {
+      if (typeof currentValue[_] === 'number' && typeof targetValue[_] === 'number') {
+        resValue[_] = currentValue[_] + (targetValue[_] - currentValue[_]) / sliceNum;
+        currentValue[_] = resValue[_];
+        console.log(currentValue[_])
+      }
+    });
+    // console.log(resValue)
+    return resValue;
+  }
+
+  renderBlock(animation) {
     if (this.neighbors.length === 0) return;
+    if (animation) {
+      this.currentRenderStatus = this.targetRenderStatus;
+    }
     drawHexagon(
       this.ctx,
       this.point,
       (this.selected ? this.belongsTo?.linghColor : this.belongsTo?.color) || this.color,
       this.content, //this.content,
-      this.content / this.maxSize
+      (this._content) / this.maxSize,
+      // this.currentRenderStatus.changeTip,
+      // this.currentRenderStatus.tipTop
     );
     this.neighbors.forEach(nei => {
       const linePoints = findNearestPoints(nei.point.vertexs, this.point.vertexs);
@@ -106,6 +155,14 @@ export default class Block {
       }
       drawLine(this.ctx, linePoints, lineColor);
     });
+    if (this.currentRenderStatus.remainingFrames === this.targetRenderStatus.remainingFrames) {
+      this.currentRenderStatus.changeTip = ""
+      return
+    } else {
+      // this.currentRenderStatus = this.computerMeanValue(this.currentRenderStatus, this.targetRenderStatus, this.targetRenderStatus.remainingFrames - this.currentRenderStatus.remainingFrames);
+      // this.currentRenderStatus.remainingFrames++;
+      // console.log(this.currentRenderStatus)
+    }
   }
 
   isSelect(value) {
@@ -119,14 +176,11 @@ export default class Block {
   }
 
   hit(block) {
-    console.log('1')
     if (!block) {
-      console.log('1')
       return this
     }
     if (this?.belongsTo?.actionType === 1) { //加点阶段
       this.tryProliferation(1);
-      console.log('2')
       return this
     }
     if (block?.belongsTo?.isAction && this?.belongsTo !== block?.belongsTo && this.isNei(block)) { //符合进攻特征
@@ -134,7 +188,6 @@ export default class Block {
         this.tryAttacked(block);
       }
     }
-    console.log('3')
     return this
   }
 
