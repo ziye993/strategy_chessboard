@@ -71,7 +71,6 @@ export default class Game {
     this.update = null;
     this.animation = false;
     this._winRole = null
-
     const initres = this.init();
     if (!initres) {
       this.error = '初始化失败，请检查窗口大小';

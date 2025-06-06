@@ -15,7 +15,6 @@ const useGameStatus = (ctx) => {
         console.error(game.current.error)
       }
     }
-    console.log('11')
   }, [ctx]);
 
   const setAiInfo = game.current?.ai?.setAiInfo.bind(game.current?.ai);

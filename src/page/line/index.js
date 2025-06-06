@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import styles from './index.module.css'
-import useCanvasInit from "../../effect/canvasInit";
+import useCanvasInit from "../../effect/useCanvasInit";
 import GameStatus from "../../gameComponents/gameStatus";
 import AiUi from "../../QLearning/Ui";
 import useGameStatus from "../../effect/useGameStatus";
 import WinBox from "../../gameComponents/winBox";
-console.log(styles)
+
 const stylesFormat = (str) => {
   const strArr = str.split(' ').map(_ => styles[_]).join(' ')
   return strArr

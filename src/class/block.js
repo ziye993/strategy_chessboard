@@ -124,7 +124,6 @@ export default class Block {
       if (typeof currentValue[_] === 'number' && typeof targetValue[_] === 'number') {
         resValue[_] = currentValue[_] + (targetValue[_] - currentValue[_]) / sliceNum;
         currentValue[_] = resValue[_];
-        console.log(currentValue[_])
       }
     });
     // console.log(resValue)

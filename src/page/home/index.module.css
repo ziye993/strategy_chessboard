@@ -19,6 +19,8 @@
     gap: 4rem;
     align-items: center;
     padding: 2rem;
+    transition: all 0.5s;
+
 }
 
 /* 通用按钮样式 */

@@ -1,15 +1,15 @@
 import { data } from "@tensorflow/tfjs";
 
-const api = 'http://localhost:3001/api/saveJson'
+const url = 'http://localhost:3001/infect'
 /**
  * 极简JSON上传函数
  * @param {Object|Array} data - 要上传的对象或数组
  * @param {string} url - API地址
  * @returns {Promise<Object>} - 响应数据
  */
-export async function postJSON(data,) {
+export async function postJSON(api, data) {
   try {
-    const response = await fetch(api, {
+    const response = await fetch(url + api, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
