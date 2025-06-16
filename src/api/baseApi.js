@@ -13,8 +13,11 @@ const handleError = async (response) => {
 // 发送 GET 请求
 export const get = async (api, params) => {
   const url = new URL(`${BASE_URL}/${api}`);
+  if (params) {
+    Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+  }
   // 添加查询参数
-  Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+
   try {
     const response = await fetch(url, {
       method: 'GET',

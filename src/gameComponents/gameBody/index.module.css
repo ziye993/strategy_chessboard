@@ -16,7 +16,7 @@
 #canvasBox {
   margin: 0;
   padding: 0;
-  /* overflow: auto; */
+  overflow: auto;
   width: 100%;
   /* height: 100vh; */
   font-size: 0;

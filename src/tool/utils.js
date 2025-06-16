@@ -21,10 +21,20 @@ export function getNewUUID(solceNumber = 8) {
 export function getDistance(point1, point2) {
   return Math.sqrt(Math.pow(point1.x - point2.x, 2) + Math.pow(point1.y - point2.y, 2));
 }
+
 let randomIndex = 0;
+/**
+ * 生成n个的随机数
+ * @param {*} n 
+ * @param {*} min 
+ * @param {*} max 
+ * @param {*} noRepeat 
+ * @returns 
+ */
 export function getNsRandom(n, min = 0, max = 0, noRepeat = true) {
   if (min < 0 || max < 0) {
-    throw Error(`无法生成随机数::min:${min},max:${max}`)
+    return []
+    // throw Error(`无法生成随机数::min:${min},max:${max}`)
   }
   if (isNaN(min) || isNaN(max) || isNaN(n)) {
     throw Error('参数错误')
@@ -67,6 +77,13 @@ export function logObjs(...arg) {
   });
 }
 
+/**
+ * 生成某个区域内的随机数
+ * @param {*} min 
+ * @param {*} max 
+ * @param {*} integer 
+ * @returns 
+ */
 export function getLimitRandom(min, max, integer) {
   if (min < 0 || max < 0) {
     throw Error(`无法生成随机数::min:${min},max:${max}`)
@@ -274,4 +291,9 @@ export function padNumber(input, targetLength) {
 
   // 其他情况：前导补零
   return '0'.repeat(lengthDiff) + str;
+}
+// 从Cookie中获取Toke
+export function getCookie(name) {
+  const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
+  return match ? match[2] : null;
 }

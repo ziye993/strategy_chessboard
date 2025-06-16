@@ -91,7 +91,6 @@ class GameAITrainer {
     this.model = this._createModel();
     this.targetModel = this._createModel();
     this._updateTargetModel();
-    console.log(this)
   }
 
   _createModel() {

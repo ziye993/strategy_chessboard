@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { userLoginToToken } from '../api/user';
+import { userLoginToPwd, userLoginToToken } from '../api/user';
 
 // 认证状态类型
 
@@ -21,21 +21,30 @@ export const AuthProvider = ({ children }) => {
     const loadAuthState = async () => {
       try {
         const user = localStorage.getItem('user');
-        console.log(user, 'user');
-        // if (token && user) {
-        //   setState({
-        //     ...state,
-        //     user: JSON.parse(user),
-        //     token,
-        //     isAuthenticated: true,
-        //     loading: false,
-        //   });
-        // } else {
-        //   setState({ ...state, loading: false });
-        // }
+        const { data, code, message } = await userLoginToToken();
+        if (code === 0) {
+          localStorage.setItem('user', JSON.stringify(data));
+          setState({
+            ...state,
+            user: data,
+            isAuthenticated: true,
+            loading: false,
+          });
+          if (!window.location.pathname.includes('/home')) window.location.href = window.location.origin + '/home'
+          return true;
+        } else {
+          if (window.location.pathname !== '/') {
+            window.location.href = window.location.origin
+          }
+          localStorage.setItem('user', "");
+          setState({
+            isAuthenticated: false,
+            loading: false,
+          });
+        }
       } catch (error) {
-        // console.error('Failed to load auth state:', error);
-        // setState({ ...state, loading: false });
+        console.error('Failed to load auth state:', error);
+        setState({ ...state, loading: false });
       }
     };
 
@@ -43,26 +52,22 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // 登录函数
-  const login = async (username, password, email, code) => {
+  const login = async (loginData) => {
     try {
-
-      const data = await userLoginToToken('/login', {
-        user: { username, password, email, code },
-        token: 'mock-jwt-token',
-      }, true)
-
-      // 保存认证信息到本地存储
-      localStorage.setItem('user', JSON.stringify(data));
-
-      // 更新状态
-      setState({
-        ...state,
-        user: data,
-        isAuthenticated: true,
-        loading: false,
-      });
-
-      return true;
+      const { data, code: resCode, message } = await userLoginToPwd(loginData)
+      if (resCode === 0) {
+        localStorage.setItem('user', JSON.stringify(data));
+        setState({
+          ...state,
+          user: data,
+          isAuthenticated: true,
+          loading: false,
+        });
+        return true;
+      } else {
+        console.error(message)
+        return false;
+      }
     } catch (error) {
       console.error('Login failed:', error);
       return false;

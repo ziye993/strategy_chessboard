@@ -7,20 +7,17 @@ import { AuthProvider } from './contexts/AuthContext';
 import router from './router';
 import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import Login from './page/login';
-import Home from './page/home';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
     <AuthProvider>
       <BrowserRouter router={router}>
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route path="/home" element={<Home />} />
+          <Route path="/home" element={<App />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
-  </React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function

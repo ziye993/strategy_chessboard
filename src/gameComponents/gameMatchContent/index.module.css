@@ -1,0 +1,404 @@
+/* 主内容区域 */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    position: relative;
+    z-index: 5;
+}
+
+/* 感染背景效果 */
+.infection-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        radial-gradient(circle at 20% 30%, rgba(0, 255, 170, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 70% 60%, rgba(255, 0, 100, 0.1) 0%, transparent 30%),
+        radial-gradient(circle at 50% 10%, rgba(100, 255, 218, 0.1) 0%, transparent 30%);
+    z-index: 0;
+    animation: pulse 8s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+}
+
+/* 未开始匹配状态 */
+.match-not-started {
+    width: 100%;
+    max-width: 600px;
+    padding: 40px;
+    background-color: rgba(20, 20, 20, 0.9);
+    border-radius: 30px;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(100, 255, 218, 0.15);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5),
+        inset 0 0 20px rgba(100, 255, 218, 0.05);
+    animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.section-title {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 30px;
+    text-align: center;
+    color: #64ffda;
+    text-shadow: 0 0 10px rgba(100, 255, 218, 0.3);
+}
+
+.game-info {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 40px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: rgba(30, 30, 30, 0.8);
+    border-radius: 15px;
+    border: 1px solid rgba(100, 255, 218, 0.1);
+}
+
+.info-label {
+    color: #999;
+    font-size: 15px;
+}
+
+.info-value {
+    color: #e6e6e6;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.start-match-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 25px;
+    background: linear-gradient(135deg, #64ffda, #00bfa5);
+    color: #0f0f0f;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 20px rgba(100, 255, 218, 0.3);
+}
+
+.start-match-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 30px rgba(100, 255, 218, 0.5);
+    background: linear-gradient(135deg, #00bfa5, #64ffda);
+}
+
+.start-match-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 0 15px rgba(100, 255, 218, 0.3);
+}
+
+/* 匹配中状态 */
+.match-in-progress {
+    width: 100%;
+    max-width: 600px;
+    padding: 40px;
+    background-color: rgba(20, 20, 20, 0.9);
+    border-radius: 30px;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(100, 255, 218, 0.15);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5),
+        inset 0 0 20px rgba(100, 255, 218, 0.05);
+    animation: pulseContainer 3s infinite;
+}
+
+@keyframes pulseContainer {
+
+    0%,
+    100% {
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.5),
+            inset 0 0 20px rgba(100, 255, 218, 0.05);
+    }
+
+    50% {
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.7),
+            inset 0 0 25px rgba(100, 255, 218, 0.1);
+    }
+}
+
+.progress-container {
+    height: 15px;
+    background-color: rgba(30, 30, 30, 0.8);
+    border-radius: 10px;
+    margin-bottom: 30px;
+    overflow: hidden;
+    border: 1px solid rgba(100, 255, 218, 0.1);
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #64ffda, #00bfa5);
+    border-radius: 10px;
+    transition: width 0.3s linear;
+    box-shadow: 0 0 15px rgba(100, 255, 218, 0.5);
+}
+
+.progress-text {
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 18px;
+    color: #e6e6e6;
+    animation: fadeInOut 2s infinite;
+}
+
+@keyframes fadeInOut {
+
+    0%,
+    100% {
+        opacity: 0.7;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* 病毒可视化效果 */
+.virus-visualization {
+    position: relative;
+    height: 120px;
+    margin-top: 20px;
+}
+
+.virus-particle {
+    position: absolute;
+    border-radius: 50%;
+    background-color: rgba(100, 255, 218, 0.2);
+    animation: float 6s infinite ease-in-out;
+}
+
+.particle-1 {
+    width: 30px;
+    height: 30px;
+    top: 20%;
+    left: 10%;
+    animation-delay: 0s;
+    box-shadow: 0 0 15px rgba(100, 255, 218, 0.3);
+}
+
+.particle-2 {
+    width: 20px;
+    height: 20px;
+    top: 60%;
+    left: 25%;
+    animation-delay: 1s;
+    box-shadow: 0 0 10px rgba(100, 255, 218, 0.2);
+}
+
+.particle-3 {
+    width: 25px;
+    height: 25px;
+    top: 30%;
+    left: 70%;
+    animation-delay: 2s;
+    box-shadow: 0 0 12px rgba(100, 255, 218, 0.25);
+}
+
+.particle-4 {
+    width: 15px;
+    height: 15px;
+    top: 70%;
+    left: 85%;
+    animation-delay: 3s;
+    box-shadow: 0 0 8px rgba(100, 255, 218, 0.15);
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0) translateX(0);
+    }
+
+    25% {
+        transform: translateY(-20px) translateX(10px);
+    }
+
+    50% {
+        transform: translateY(0) translateX(20px);
+    }
+
+    75% {
+        transform: translateY(20px) translateX(10px);
+    }
+}
+
+/* 匹配成功状态 */
+.match-success {
+    width: 100%;
+    max-width: 600px;
+    padding: 40px;
+    background-color: rgba(20, 20, 20, 0.9);
+    border-radius: 30px;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(100, 255, 218, 0.2);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5),
+        inset 0 0 20px rgba(100, 255, 218, 0.1);
+    animation: zoomIn 0.5s ease-out;
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.matched-player-info {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: rgba(30, 30, 30, 0.8);
+    border-radius: 20px;
+    border: 1px solid rgba(100, 255, 218, 0.15);
+}
+
+.matched-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid #64ffda;
+    box-shadow: 0 0 20px rgba(100, 255, 218, 0.4);
+    object-fit: cover;
+}
+
+.player-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.player-name {
+    font-size: 22px;
+    font-weight: bold;
+    color: #e6e6e6;
+}
+
+.player-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.stat-item {
+    font-size: 16px;
+    color: #999;
+}
+
+.match-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 40px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    background-color: rgba(30, 30, 30, 0.8);
+    border-radius: 15px;
+    border: 1px solid rgba(100, 255, 218, 0.1);
+}
+
+.detail-label {
+    color: #999;
+    font-size: 15px;
+}
+
+.detail-value {
+    color: #e6e6e6;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.enter-game-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 25px;
+    background: linear-gradient(135deg, #64ffda, #00bfa5);
+    color: #0f0f0f;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 25px rgba(100, 255, 218, 0.4);
+}
+
+.enter-game-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 40px rgba(100, 255, 218, 0.6);
+    background: linear-gradient(135deg, #00bfa5, #64ffda);
+}
+
+.enter-game-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 0 20px rgba(100, 255, 218, 0.4);
+}
+
+.auto-enter-text {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 15px;
+    color: #999;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 0.7;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}

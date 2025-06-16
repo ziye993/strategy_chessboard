@@ -1,7 +1,7 @@
 import styles from './index.module.css';
 import { deepMerge } from "../../tool/utils";
 
-export default function ConfigUi(props) {
+export default function AiConfigUi(props) {
   const aiInfo = props?.gameInfo?.aiInfo || {};
   const changeAiInfo = (info) => {
     props.setAiInfo(deepMerge(aiInfo, info))

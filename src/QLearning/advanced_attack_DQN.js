@@ -5,57 +5,34 @@ import Dqn from './dqn';
 
 export default class AdvancedAttackAgent extends Dqn {
   constructor(game, config = { mapSize: 150, }) {
-    super('AdvancedAttackAgentModel', { ...config, characteristicSize: 13, actionSpaceSize: 150150 });
+    super('AdvancedAttackAgentModel', { ...config, stateShape: 12 * 150, actionSpaceSize: 150150 });
     this.game = game;
   }
 
   getGameState() {
     const role = this.game.roles[this.game.currentActionRole];
-    const belongsToBlock = new Set(role.blocks.map(b => b.id));
     const blockFeatures = [];
-
+    const blocks = new Array(150).fill(null);
+    this.game.blocks.forEach(_ => blocks[_.realIndex] = _);
     // 不足150时用0填充（保持固定输入长度）
-    for (let id = 0; id < 150; id++) {
-      const block = this.game.aiBlocks[id];
+    for (let index = 0; index < blocks.length; index++) {
+      const block = blocks[index];
       if (!block) {
-        blockFeatures.push(
-          -1,
-          -1,
-          -1,
-          -1,
-          -1, -1, -1, -1, -1, -1, // bf
-          -1,
-          -1,
-          -1,
-        );
+        blockFeatures.push(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,);
         continue;
-      }
-      const isSee = block.neighbors.some(_ => _.belongsTo === role)
-      if (isSee) { //可见
-        const bfvalue = Array(6).fill(-1); // 上 /右上/右/。。。 位置上的值，-1 表示没有
+      } else {
+        const bfvalue = Array(6).fill(-1);
         block.neighborsPositionIndex.forEach((pos, i) => {
           bfvalue[pos] = block.neighbors[i].content;
         });
         blockFeatures.push(
-          belongsToBlock.has(id) ? 1 : 0,
-          block.content,
+          block.belongsTo === role ? 1 : 0, //是否被己方占领
           block.isDisadvantaged ? 1 : 0,
+          block.content, //块大小，
           block.maxSize,
           ...bfvalue,
           block.point.relativeX,
           block.point.relativeY,
-          1
-        );
-      } else { //不可见
-        blockFeatures.push(
-          belongsToBlock.has(id) ? 1 : 0,
-          -1,// block.content,
-          -1,//  block.isDisadvantaged ? 1 : 0,
-          -1,
-          -1, -1, -1, -1, -1, -1, // bf
-          -1,
-          -1,
-          0
         );
       }
     }
@@ -104,7 +81,7 @@ export default class AdvancedAttackAgent extends Dqn {
       if (_.content >= 2) {
         _.neighbors.forEach(__ => {
           if (__.belongsTo !== _.belongsTo) {
-            actionList.push(+`${__.key}.${padNumber(_.key + '', 3)}`)
+            actionList.push(+`${__.realIndex}.${padNumber(_.realIndex + '', 3)}`)
           }
         })
       }
@@ -122,7 +99,7 @@ export default class AdvancedAttackAgent extends Dqn {
     let end, foramtAction;
     if (action !== 0) {
       foramtAction = (action + '').split('.').map(_ => padNumber(_, 3));
-      this.game.aiBlocks[Number(foramtAction[0])].tryAttacked(this.game.aiBlocks[Number(foramtAction[1])]);
+      this.game.blocks[Number(foramtAction[0])].tryAttacked(this.game.blocks[Number(foramtAction[1])]);
     }
     if (action === 0) return false;
     return initialActionList.length !== 1;
@@ -138,7 +115,7 @@ export default class AdvancedAttackAgent extends Dqn {
     let end, foramtAction;
     if (actionIsValidata && aiAction !== 0) {
       foramtAction = (aiAction + '').split('.').map(_ => padNumber(_, 3));
-      end = this.game.aiBlocks[Number(foramtAction[0])].tryAttacked(this.game.aiBlocks[Number(foramtAction[1])]); // ai'玩'游戏
+      end = this.game.blocks[Number(foramtAction[0])].tryAttacked(this.game.blocks[Number(foramtAction[1])]); // ai'玩'游戏
     } else {
       foramtAction = [aiAction]
     }

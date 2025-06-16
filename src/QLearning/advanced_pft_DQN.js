@@ -2,61 +2,34 @@ import Dqn from './dqn';
 
 export default class AdvancedPftAgent extends Dqn {
   constructor(game, config = { mapSize: 150, }) {
-    super('AdvancedPftAgentModel', { ...config, characteristicSize: 14, actionSpaceSize: 150 });
+    super('AdvancedPftAgentModel', { ...config, stateShape: 12 * 150 + 1, actionSpaceSize: 150 });
     this.game = game;
   }
 
   getGameState() {
     const role = this.game.roles[this.game.currentActionRole];
-    const belongsToBlock = new Set(role.blocks.map(b => b.id));
-    const blockFeatures = [];
-
+    const blockFeatures = [role.fraction];
+    const blocks = new Array(150).fill(null);
+    this.game.blocks.forEach(_ => blocks[_.realIndex] = _);
     // 不足150时用0填充（保持固定输入长度）
-    for (let id = 0; id < 150; id++) {
-      const block = this.game.aiBlocks[id];
+    for (let index = 0; index < blocks.length; index++) {
+      const block = blocks[index];
       if (!block) {
-        blockFeatures.push(
-          -1,
-          -1,// block.content,
-          -1,//  block.isDisadvantaged ? 1 : 0,
-          -1,
-          -1, -1, -1, -1, -1, -1, // bf
-          -1,
-          -1,
-          -1,
-          -1 //剩余可用点点数
-        );
+        blockFeatures.push(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,);
         continue;
-      }
-      const isSee = block.neighbors.some(_ => _.belongsTo === role)
-      if (isSee) { //可见
+      } else {
         const bfvalue = Array(6).fill(-1);
         block.neighborsPositionIndex.forEach((pos, i) => {
           bfvalue[pos] = block.neighbors[i].content;
         });
-        const hasId = belongsToBlock.has(id);
         blockFeatures.push(
-          hasId ? 1 : 0,
-          block.content,
+          block.belongsTo === role ? 1 : 0, //是否被己方占领
           block.isDisadvantaged ? 1 : 0,
+          block.content, //块大小，
           block.maxSize,
           ...bfvalue,
           block.point.relativeX,
           block.point.relativeY,
-          1,
-          hasId ? block.belongsTo.fraction : 0 //剩余可用点点数
-        );
-      } else { //不可见
-        blockFeatures.push(
-          belongsToBlock.has(id) ? 1 : 0,
-          -1,// block.content,
-          -1,//  block.isDisadvantaged ? 1 : 0,
-          block.maxSize,
-          -1, -1, -1, -1, -1, -1, // bf
-          -1,
-          -1,
-          0,
-          0 //剩余可用点点数
         );
       }
     }
@@ -102,7 +75,7 @@ export default class AdvancedPftAgent extends Dqn {
     const actionList = [-1];
     if (role.fraction > 0) {
       const _actionList = role.blocks.filter(_ => _.content < _.maxSize);
-      return [...actionList, ..._actionList.map(_ => _.key)]
+      return [...actionList, ..._actionList.map(_ => _.realIndex)]
     }
     return actionList;
   }
@@ -127,7 +100,7 @@ export default class AdvancedPftAgent extends Dqn {
     const action = invalActionList[Math.floor(Math.random() * invalActionList.length)];
     let end;
     if (action !== -1) {
-      end = this.game.aiBlocks[action].tryProliferation(1);
+      end = this.game.blocks[action].tryProliferation(1);
       // await this.sleep(10);
     };
     if (action === -1) return false
@@ -143,7 +116,7 @@ export default class AdvancedPftAgent extends Dqn {
     const actionIsValidata = invalActionList.includes(aiAction);
     let end;
     if (actionIsValidata && aiAction !== -1) {
-      end = this.game.aiBlocks[aiAction].tryProliferation(1);
+      end = this.game.blocks[aiAction].tryProliferation(1);
       // await this.sleep(10);
     };
     let done = false;

@@ -39,7 +39,6 @@ const GameStateBar = (props) => {
 
 const StatusDisplay = (props) => {
   const { gameInfo, nextStep, newGame, startTrain, paushTrain, stepTrain } = props;
-  // console.log(gameInfo, 'gameInfo');
   const aiInfo = gameInfo.aiInfo;
   const setAiInfo = (otherInfo) => {
     props.setAiInfo({
@@ -47,7 +46,7 @@ const StatusDisplay = (props) => {
       ...otherInfo
     })
   }
-  // const textConfig = {
+  // const textConfig = { // gameType
   //   content: statusMap[gameInfo?.currentRole?.actionType] || "开始",
   //   nextstep: stepMap[gameInfo?.currentRole?.actionType] || "开始",
   //   color: gameInfo?.currentRole?.color || "rgba(255,255,255,1)",
@@ -72,7 +71,7 @@ const StatusDisplay = (props) => {
       <GameStatusIcon type={gameType} onClick={() => { setAiInfo({ animation: false }) }}>动画</GameStatusIcon>
     </GameStateBar>
 
-    <GameStateBar type={aiType}>
+    {gameInfo.gameType === 'local' && <GameStateBar type={aiType}>
       <GameStatusIcon type={aiInfo?.start ? 'runing' : 'unStart'} icon={<i className="bi bi-cpu"></i>}> AI训练 </GameStatusIcon>
       <h3 className="status-name">目标：{aiInfo?.targetTrainNumber}</h3>
       <GameStatusProgress type={aiType}>{Math.floor((aiInfo?.currentTrainNumber) / (aiInfo?.targetTrainNumber || 1) * 100)}</GameStatusProgress>
@@ -85,8 +84,9 @@ const StatusDisplay = (props) => {
         <i className="bi bi-gear" onClick={props.aiSetting}></i>
       </div>
     </GameStateBar>
+    }
 
-    <GameStateBar type={aiInfo?.demonstrate ? 'runing' : 'unStart'}>
+    {gameInfo.gameType === 'local' && <GameStateBar type={aiInfo?.demonstrate ? 'runing' : 'unStart'}>
       <GameStatusIcon type={aiInfo?.demonstrate ? 'runing' : 'unStart'} icon={<i class="bi bi-pc-display-horizontal"></i>}> 演示模式 </GameStatusIcon>
       <div className="status-edit status-timeout">
         定时器 <i class="bi bi-dash-lg" onClick={() => props?.setInterval?.(-1)}></i><span>{(aiInfo?.interval / 1000) || '0'}</span><i class="bi bi-plus-lg" onClick={() => props?.setInterval?.(1)}></i>
@@ -96,12 +96,12 @@ const StatusDisplay = (props) => {
         {/* <i className="bi bi-fast-forward" onClick={aiInfo?.training ? stepTrain : null}></i> */}
         {/* <i className="bi bi-gear" onClick={props.aiSetting}></i> */}
       </div>
-    </GameStateBar>
+    </GameStateBar>}
 
     <GameStateBar color={"#FFFFFF"} className="actionCompBar">
       <span className="actionComp" onClick={(aiInfo?.start || aiInfo?.demonstrate) ? null : nextStep}>完成行动</span>
     </GameStateBar>
-  </div>)
+  </div >)
 };
 
 export default StatusDisplay;  

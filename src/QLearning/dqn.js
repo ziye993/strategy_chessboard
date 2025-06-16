@@ -6,10 +6,8 @@ export default class Dqn {
   constructor(name, config = {}) {
     this.name = name;
     this.attWorker = new Worker(new URL('./advanced_worker.js', import.meta.url));
-    // this.attWorker.postMessage({ type: 'getStorege', data: localStorage.getItem(this.name) });
     this.attWorker.onmessage = (e) => { };
     const _woreker = this.attWorker;
-    // this.gameAi = new GameAITrainer({ actionSpaceSize: 150150, stateShape: [13 * 150] });
     this.gameAi = {
       saveModel: async (...data) => await workerPromise(_woreker, 'saveModel', 2000, ...data),
       recordExperience: (...data) => workerfun(_woreker, 'recordExperience', ...data),
@@ -22,7 +20,7 @@ export default class Dqn {
     }
     this.accumulatedRewards = 0;
     this.accumulatedPunishment = 0;
-    this.characteristicSize = config.characteristicSize;
+    this.stateShape = config.stateShape;
     if (!config.mapSize) { console.error(`[[  ${this.name} !config.mapSize ]]`) }
     this.mapSize = config.mapSize;
     this.actionSpaceSize = config.actionSpaceSize;
@@ -30,7 +28,7 @@ export default class Dqn {
   // 初始化
   async initAi() {
     // aiLog(`开始初始化 ${this.name};`)
-    const data = await this.gameAi.init({ actionSpaceSize: this.actionSpaceSize, stateShape: [this.characteristicSize * this.mapSize] });
+    const data = await this.gameAi.init({ actionSpaceSize: this.actionSpaceSize, stateShape: [this.stateShape] });
     // aiLog(`初始化 ${this.name} 完成:`, data);
     return data
   }

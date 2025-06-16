@@ -1,24 +1,27 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Line from "./page/line";
 import Local from "./page/local";
 import Home from "./page/home";
-import useWssTest from "./effect/useWssTest";
-import { useNavigate } from "react-router-dom";
+
 
 export default function App(props) {
-  const [gameType, setGameType] = useState(null);
-  const Game = gameType && (gameType === 'line' ? Line : Local);
-  const navigate = useNavigate();
+  const [gameConfig, setGameConfig] = useState(null);
+  const Game = gameConfig?.gametype && (gameConfig?.gametype === 'line' ? Line : Local);
+  // const navigate = useNavigate();
   const GameTypeSelect = (config) => {
-    setGameType(config.gametype);
+    if (config.gametype && config.mapSize) {
+      setGameConfig({ ...config, complete: true });
+      return
+    }
+    setGameConfig(config);
   }
-  useWssTest();
-  useEffect(() => {
-    navigate('/login')
-  }, [])
+  // useEffect(() => {
+  //   navigate('/login')
+  // }, [])
+
 
   return (<>
-    {<Home creat={GameTypeSelect} gameType={gameType} />}
-    {gameType && <Game />}
+    {<Home create={GameTypeSelect} gameType={gameConfig?.gametype} />}
+    {gameConfig?.complete && <Game gameConfig={gameConfig} />}
   </>)
 }

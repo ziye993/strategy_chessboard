@@ -1,21 +1,56 @@
-
 import { useRef, useState, useEffect } from "react";
 import Game from "../class/game";
+import { useAuth } from "../contexts/AuthContext";
+import loadWss from "./gamewss";
+import { getUUID } from "../tool/utils";
 
-const useGameStatus = (ctx) => {
+
+const useGameStatus = (canvasId, config) => {
+  const { state: { user } = {} } = useAuth();
   const game = useRef(null);
   const [gameInfo, setGameInfo] = useState({});
+  const canvasCtx = useRef(null);
+  const gameWs = useRef()
   useEffect(() => {
-    if (ctx.current && !game.current) {
+    const canvasDom = document.getElementById(canvasId);
+    if (!canvasCtx.current && canvasDom) {
+      canvasCtx.current = canvasDom.getContext('2d');
+    }
+    if (canvasCtx.current && !game.current) {
       const getState = (newState) => {
         setGameInfo(newState);
       };
-      game.current = new Game(ctx.current, getState);
-      if (game.current.error) {
-        console.error(game.current.error)
+
+      if (config.gametype === 'line') {
+        gameWs.current = loadWss()
+        window.gameWs = gameWs;
+        gameWs.current.onopen = () => {
+          console.log('WebSocket连接已建立');
+          game.current = new Game(canvasCtx.current, { ...config }, user?.id || getUUID());
+          game.current.releaseData = getState;
+          game.current.updataState();
+          gameWs.current.onmessage = (e) => {
+            console.log(e.data, 'message')
+            game.current.playerAction(e.data);
+          }
+        };
+        gameWs.current.onclose = (event) => {
+          console.log('连接已关闭', event.code, event.reason);
+          // 可添加重连逻辑
+        };
+
+        // 错误处理
+        gameWs.current.onerror = (error) => {
+          console.error('WebSocket错误:', error);
+        };
+
+      } else {
+        game.current = new Game(canvasCtx.current, { ...config }, null);
+        game.current.releaseData = getState;
+        game.current.updataState();
       }
     }
-  }, [ctx]);
+  }, [gameWs]);
 
   const setAiInfo = game.current?.ai?.setAiInfo.bind(game.current?.ai);
   const newGame = game.current?.newGame.bind(game.current);

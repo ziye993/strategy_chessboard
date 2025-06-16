@@ -1,6 +1,5 @@
 import { getNewUUID, getDistance, isEqual } from "../tool/utils";
-import { drawHexagon, drawLine, getVertexs } from "../tool/canvasUtils";
-
+import { clearHexagonByPoints, drawCrosshair, drawHexagon, drawLine, getVertexs } from "../tool/canvasUtils";
 const gearContent = {
   1: 6,
   2: 6,
@@ -28,90 +27,63 @@ function findNearestPoints(arr1, arr2) {
   return [{ ...arr1[index1] }, { ...arr2[index2] }]
 }
 
+const colors = ['FF2501', '00A1FF', '5ed935', 'f8ba00', "d31876", '00c4cc']
+const c = Math.floor(Math.random() * 6)
+const index = 0
 
 //游戏元素 //正六边形的块
 export default class Block {
-  constructor(ctx, _key) {
-    this._key = _key;
-    this._content = 0;
-    this.color = [34, 34, 34, 1];
-    this.id = null;
-    this.point = { x: 0, y: 0 };
-    this.maxSize = 0;
-    this.belongsTo = null;
-    this.neighbors = [];
-    this.neighborsPositionIndex = [];
-    this.vertex = [];
+  constructor(ctx, initData) {
+    this.realIndex = initData.realIndex;
+    this.content = initData.content || 0;
+    this.color = [255, 255, 255, 0.3];
+    this.id = initData.id || getNewUUID();
+    this.point = { ...initData.point, ...getVertexs({ ...initData.point }) };
+    this.maxSize = initData.maxSize || gearContent[Math.floor(Math.random() * 3) + 1];
+    // size: this.point.size - (10 - this.maxSize) * (3 - this.maxSize / 5),
+    this.belongsTo = initData.belongsTo || null;
+    this.neighbors = initData.neighbors || [];
+    this.neighborsPositionIndex = initData.neighborsPositionIndex || [];
     this.ctx = ctx;
     this.selected = false;
-    this.isDisadvantaged = false;
+    this.isDisadvantaged = initData.isDisadvantaged || false;
+    this._isRefresh = true;
+    this.i = 0;
 
-    this.currentRenderStatus = {
-      content: 0,
-      remainingFrames: 0,
-      tipTop: this.point.y,
-      changeTip: '',
-    }
-    this.targetRenderStatus = {
-      content: this._content,
-      remainingFrames: 120,
-      tipTop: this.point.y - 50,
-      changeTip: ''
-    }
     // this.game = game;
     // this.contentIsMax = false;
     // this.maxType = this.maxSize > 10 ? 2 : (this.maxSize > 6 ? 1 : 0);
   }
 
-  get key() {
-    return this._key
+
+  get isRefresh() {
+    return this._isRefresh
   }
 
-  get content() {
-    return this._content;
+  set isRefresh(value) {
+    if (this._isRefresh === true) {
+      this.renderBlock(this.i);
+      this._isRefresh = value;
+      this.i++;
+      if (this.i > 5) {
+        this.i = 0
+      }
+    }
   }
 
-  set content(value) {
-    this.targetRenderStatus.content = value;
-    this.currentRenderStatus.remainingFrames = 0;
-    this.currentRenderStatus.changeTip = (this._content - value) + '' || null;
-    this.currentRenderStatus.tipTop = this.point.y;
-    this.targetRenderStatus.tipTop = this.point.y - 50;
-    this._content = value;
-  }
-
-  initNeighborsPositionIndex() {
-    this.neighborsPositionIndex = this.neighbors.map(item => {
+  initNeighborsPositionIndex(currentblock) {
+    currentblock.neighbors.map(item => {
       // case循环
       switch (true) {
-        case (item.point.x === this.point.x && item.point.y < this.point.y): return 0;
-        case (item.point.x > this.point.x && item.point.y < this.point.y): return 1;
-        case (item.point.x > this.point.x && item.point.y > this.point.y): return 2;
-        case (item.point.x === this.point.x && item.point.y > this.point.y): return 3;
-        case (item.point.x < this.point.x && item.point.y > this.point.y): return 4;
-        case (item.point.x < this.point.x && item.point.y < this.point.y): return 5;
+        case (item.point.x === currentblock.point.x && item.point.y < currentblock.point.y): return 0;
+        case (item.point.x > currentblock.point.x && item.point.y < currentblock.point.y): return 1;
+        case (item.point.x > currentblock.point.x && item.point.y > currentblock.point.y): return 2;
+        case (item.point.x === currentblock.point.x && item.point.y > currentblock.point.y): return 3;
+        case (item.point.x < currentblock.point.x && item.point.y > currentblock.point.y): return 4;
+        case (item.point.x < currentblock.point.x && item.point.y < currentblock.point.y): return 5;
         default: return -1;
       }
     })
-  }
-
-  init(point, config) { //初始化
-    this.point = point;
-    this.id = getNewUUID();
-    //6-18之间的随机数
-    this.maxSize = gearContent[Math.floor(Math.random() * 3) + 1];
-    // 计算顶点坐标
-    this.point = {
-      ...this.point,
-      ...getVertexs({ //顶点位置
-        x: this.point.x,
-        y: this.point.y,
-        size: this.point.size - (10 - this.maxSize) * (3 - this.maxSize / 10),
-      }),
-      size: this.point.size - (10 - this.maxSize) * (3 - this.maxSize / 5),
-      maxSize: this.maxSize,
-    }
-    this.color = config.color;
   }
 
   computerMeanValue(currentValue, targetValue, sliceNum) {
@@ -130,38 +102,30 @@ export default class Block {
     return resValue;
   }
 
-  renderBlock(animation) {
+  renderBlock(i) {
     if (this.neighbors.length === 0) return;
-    if (animation) {
-      this.currentRenderStatus = this.targetRenderStatus;
-    }
-    drawHexagon(
-      this.ctx,
-      this.point,
-      (this.selected ? this.belongsTo?.linghColor : this.belongsTo?.color) || this.color,
-      this.content, //this.content,
-      (this._content) / this.maxSize,
-      // this.currentRenderStatus.changeTip,
-      // this.currentRenderStatus.tipTop
-    );
-    this.neighbors.forEach(nei => {
-      const linePoints = findNearestPoints(nei.point.vertexs, this.point.vertexs);
-      let lineColor = [...this.color.toSpliced(2, 1), 0.5];
-      if (this.belongsTo === nei.belongsTo && this.belongsTo) {
-        lineColor = this.belongsTo.linghColor;
-      } else if (nei.belongsTo === null && this.belongsTo) {
-        lineColor = this.belongsTo.color;
-      }
-      drawLine(this.ctx, linePoints, lineColor);
+    if (!this.isRefresh) return
+
+    const clearPoints = [...this.point.vertexs];
+    const renderLinePoint = [];
+    this.neighbors.forEach((nei, _neiIndex) => {
+      const linePoints = findNearestPoints(this.point.vertexs, nei.point.vertexs);
+      clearPoints[this.neighborsPositionIndex[_neiIndex]] = linePoints[1]
+      renderLinePoint.push([linePoints, this?.belongsTo?.color || this.color, nei?.belongsTo?.color || nei.color]);
     });
-    if (this.currentRenderStatus.remainingFrames === this.targetRenderStatus.remainingFrames) {
-      this.currentRenderStatus.changeTip = ""
-      return
-    } else {
-      // this.currentRenderStatus = this.computerMeanValue(this.currentRenderStatus, this.targetRenderStatus, this.targetRenderStatus.remainingFrames - this.currentRenderStatus.remainingFrames);
-      // this.currentRenderStatus.remainingFrames++;
-      // console.log(this.currentRenderStatus)
-    }
+    requestAnimationFrame(() => {
+      clearHexagonByPoints(this.ctx, clearPoints);
+      drawHexagon(
+        this.ctx,
+        this.point,
+        this.belongsTo?.color || this.color,
+        this.content,
+        (this.content) / this.maxSize,
+      );
+      renderLinePoint.forEach(_ => {
+        drawLine(this.ctx, _[0], _[1], _[2]);
+      })
+    })
   }
 
   isSelect(value) {
@@ -190,7 +154,6 @@ export default class Block {
     return this
   }
 
-
   tryAttacked(block) {
     const neiSelect = block; //攻击者     this=被攻击者
     if (neiSelect && (neiSelect.belongsTo !== this.belongsTo)) {
@@ -198,6 +161,11 @@ export default class Block {
       if (!neiSelect || !neiSelect.belongsTo || neiSelect.content === 1) {
         return '无法进攻'
       }
+      requestAnimationFrame(() => {
+        this.isRefresh = true;
+        block.isRefresh = true;
+      });
+      block.belongsTo.wsaction(`attacked.${this.id}.${block.id}`)
       if (neiSelect.content - 2 >= this.content) { //可吃/覆盖/占领` 
         this.content = neiSelect.content - 1 - this.content;
         neiSelect.content = 1;
@@ -251,6 +219,8 @@ export default class Block {
       || this.belongsTo.fraction < 1
       || this.content === this.maxSize
     ) return false;
+    this.belongsTo.wsaction(`proliferation.${this.id}`)
+    this.isRefresh = true;
     const point = this.belongsTo.fraction < value ? this.fraction : value;
     this.content += point;
     this.belongsTo.fraction -= point;

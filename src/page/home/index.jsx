@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styles from './index.module.css';
 
 const stylesFormat = (str) => {
@@ -22,7 +22,11 @@ function Home(props) {
   const [mapSize, setMapSize] = useState(8);
   const [currentStep, setCurrentStep] = useState(0);
   const gameconfig = useRef({});
-  const creat = () => props.creat({ mapSize, ...gameconfig.current, });
+  const create = () => props?.create?.({ ...gameconfig.current, mapSize: gameconfig.current.mapSize || mapSize });
+
+  useEffect(() => {
+    gameconfig.current.mapSize = null
+  }, [mapSize])
 
   return (<div className={stylesFormat("app-container")} style={{ opacity: props.gameType ? '0' : '1', zIndex: props.gameType ? '0' : '999' }}>
     <Step currentStep={currentStep} stepKey={0} >
@@ -32,9 +36,9 @@ function Home(props) {
     </Step>
     <Step currentStep={currentStep} stepKey={1}>
       <Button onClick={() => setCurrentStep(0)}>上一步</Button>
-      <Button onClick={() => { setMapSize(8); creat() }}>小[8X8]</Button>
-      <Button onClick={() => { setMapSize(14); creat() }}>中[14X14]</Button>
-      <Button onClick={() => { setMapSize(20); creat() }}>大[20X20]</Button>
+      <Button onClick={() => { gameconfig.current.mapSize = 8; create() }}>小[8X8]</Button>
+      <Button onClick={() => { gameconfig.current.mapSize = 14; create() }}>中[14X14]</Button>
+      <Button onClick={() => { gameconfig.current.mapSize = 20; create() }}>大[20X20]</Button>
       <Button onClick={() => setCurrentStep(2)}>自定义</Button>
     </Step>
     <Step currentStep={currentStep} stepKey={2}>
@@ -42,7 +46,7 @@ function Home(props) {
       <Button onClick={() => setMapSize(prev => prev < 9 ? prev : (prev - 1))} ><i class="bi bi-dash-lg" /></Button>
       <Button> {mapSize}</Button>
       <Button onClick={() => setMapSize(prev => prev > 19 ? prev : (prev + 1))} ><i class="bi bi-plus-lg" /></Button>
-      <Button onClick={creat}>创建</Button>
+      <Button onClick={create}>创建</Button>
     </Step>
   </div >);
 }

@@ -1,7 +1,7 @@
 
 import { useEffect, useRef } from "react";
 //设置canvas的大小为浏览器页面的小，并且当窗口改变时也会同步更改大小
-export default function useCanvasInit(canvas) {
+export default function useCanvasInit(canvas, config) {
   const canvasCtx = useRef(null);
   useEffect(() => {
     if (canvasCtx.current) return;
@@ -12,8 +12,8 @@ export default function useCanvasInit(canvas) {
       const rect = { width: parent.width, height: parent.height };
 
       if (rect.width && rect.height) {
-        canvas.current.width = rect.width * dpr;
-        canvas.current.height = rect.height * dpr;
+        canvas.current.width = dpr * 6 * config.mapSize * config.blockSize;
+        canvas.current.height = dpr * 3 * config.mapSize * config.blockSize;
       }
     }
     initCanvas(); // 初始化canvas
