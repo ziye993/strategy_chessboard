@@ -155,6 +155,7 @@ export default class Block {
   }
 
   tryAttacked(block) {
+    console.log(block)
     const neiSelect = block; //攻击者     this=被攻击者
     if (neiSelect && (neiSelect.belongsTo !== this.belongsTo)) {
       // 敌方进攻

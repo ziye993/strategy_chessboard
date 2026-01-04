@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useDebugValue, useEffect, useRef, useState } from "react";
 import styles from './index.module.css'
 import useCanvasInit from "../../effect/useCanvasInit";
 import GameStatus from "../../gameComponents/gameStatus";
@@ -6,6 +6,7 @@ import AiUi from "../../QLearning/Ui";
 import useGameStatus from "../../effect/useGameStatus";
 import WinBox from "../../gameComponents/winBox";
 import { getGameMap } from "../../api/game";
+import { useDragScroll } from "../../effect/useDragScroll";
 
 const stylesFormat = (str) => {
   const strArr = str.split(' ').map(_ => styles[_]).join(' ')
@@ -15,7 +16,7 @@ const stylesFormat = (str) => {
 function Line(props) {
   const canvasDom = useRef(null);
   const [show, setShow] = useState(false);
-
+  const dragRef = useDragScroll();
   const gameStatus = useGameStatus(stylesFormat("game"), props.gameConfig);
   const [modalOpen, setModalOpen] = useState(!!gameStatus?.gameInfo?.winRole);
 
@@ -23,7 +24,7 @@ function Line(props) {
 
   return <div className={stylesFormat("game_main")}>
     <AiUi {...gameStatus} show={show} onClick={() => { setShow(prev => !prev) }} />
-    <div id={stylesFormat("canvasBox")}>
+    <div id={stylesFormat("canvasBox")} ref={dragRef}>
       <canvas id={stylesFormat("game")} ref={canvasDom} width="0" height="0" />
     </div>
     <GameStatus {...gameStatus} aiSetting={() => { setShow(prev => !prev) }} />

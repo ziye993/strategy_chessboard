@@ -43,9 +43,9 @@ function Home(props) {
     </Step>
     <Step currentStep={currentStep} stepKey={2}>
       <Button onClick={() => setCurrentStep(1)}>上一步</Button>
-      <Button onClick={() => setMapSize(prev => prev < 9 ? prev : (prev - 1))} ><i class="bi bi-dash-lg" /></Button>
+      <Button onClick={() => setMapSize(prev => prev < 9 ? prev : (prev - 1))} ><i className="bi bi-dash-lg" /></Button>
       <Button> {mapSize}</Button>
-      <Button onClick={() => setMapSize(prev => prev > 19 ? prev : (prev + 1))} ><i class="bi bi-plus-lg" /></Button>
+      <Button onClick={() => setMapSize(prev => prev > 19 ? prev : (prev + 1))} ><i className="bi bi-plus-lg" /></Button>
       <Button onClick={create}>创建</Button>
     </Step>
   </div >);

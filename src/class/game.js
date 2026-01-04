@@ -47,8 +47,9 @@ function initNeighborsPositionIndex(block) {
 function objCopy(obj) {
   return JSON.parse(JSON.stringify(obj))
 }
-
+const entertainOneself = true; // 自娱自乐,自己和自己下棋
 export default class Game {
+
   constructor(ctx, initData, id) {
     this.ctx = ctx; //画布
     this.releaseData = null;
@@ -145,6 +146,7 @@ export default class Game {
   roleInit() {
     const r = getNsRandom(3, 0, this.blocks.length - 1);
     const self = this;
+    const n = Math.floor(Math.random() * 3); // 0,1,2
     this.roles = r.map((item, index) => {
       const role = new Role({
         blocks: [this.blocks[item]],
@@ -157,6 +159,7 @@ export default class Game {
       this.blocks[item].belongsTo = role;
       return role;
     });
+    this.locaPlayerId = this.roles[n].id
   }
 
   saveMap(other = {}) {
@@ -284,7 +287,6 @@ export default class Game {
         });
       }
     }
-
     let isAvailable = false;
 
     while (isAvailable === false) {
@@ -352,12 +354,16 @@ export default class Game {
     if (!this.isStart) {
       return;
     }
-    this.roles?.[this?.currentActionRole]?.nextStep();
-    this.needHandleClickEvent();
+    if (this.gameType === 'local' && entertainOneself) {
+      this.roles?.[this?.currentActionRole]?.nextStep();
+      this.needHandleClickEvent();
+    } else if (this.roles[this.currentActionRole].id === this.locaPlayerId) {
+      this.roles?.[this?.currentActionRole]?.nextStep();
+      this.needHandleClickEvent();
+    }
   }
   // 下一个角色行动
   nextRole() {
-
     this.currentActionRole += 1;
     if (this.currentActionRole >= this.roles.length) {
       this.currentActionRole = 0;
@@ -376,7 +382,9 @@ export default class Game {
 
   needHandleClickEvent() {
     this.ctx.canvas.removeEventListener('click', this.eventClick);
-    if (this.roles[this.currentActionRole].id === this.locaPlayerId) {
+    if (this.gameType === 'local' && entertainOneself) {
+      this.ctx.canvas.addEventListener('click', this.eventClick);
+    } else if (this.roles[this.currentActionRole].id === this.locaPlayerId) {
       this.ctx.canvas.addEventListener('click', this.eventClick);
     }
   }
@@ -419,7 +427,8 @@ export default class Game {
         blocksMap[actionInfo[1]].tryAttacked(blocksMap[actionInfo[2]]);
         break;
       case 'nextstep':
-        this.nextStep();
+        this.roles?.[this?.currentActionRole]?.nextStep();
+        this.needHandleClickEvent();
         break;
       default:
         break;
@@ -439,239 +448,3 @@ export default class Game {
 }
 
 
-
-
-// //游戏主逻辑
-// export default class Game {
-//   constructor(ctx, releaseData) {
-//     this.ctx = ctx; //画布
-//     this.releaseData = releaseData;
-//     this.winRole = null;
-
-//     this.hitBlock = null;
-//     this.update = null;
-//     this.animation = false;
-//     this._winRole = null
-//     const initres = this.init();
-//     if (!initres) {
-//       this.error = '初始化失败，请检查窗口大小';
-//       releaseData({ error: this.error });
-//       return
-//     }
-//     this.ai = new AiAgent(this);
-//     this.renderCtx();
-//     this.startGame();
-//     this.eventClick = this.handleClick.bind(this);
-//     this.ctx.canvas.addEventListener('click', this.eventClick);
-//   }
-
-//   set winRole(value) {
-//     if (value) {
-//       this.updataState();
-//       this._winRole = value
-//     }
-//   }
-
-//   get winRole() {
-//     return this._winRole;
-//   }
-
-//   reset() {
-//     this.config = gameConfig;
-
-//     this.isStart = true; //游戏是否开始
-//     this.blocks = []; //游戏元素
-//     this.aiBlocks = [];
-//     this.currentActionRole = 0; //当前行动角色
-//     this.roles = []; //角色
-//     this.selectBlocks = [];
-//     this._winRole = null;
-//   }
-
-//   init() {
-//     this.reset();
-//     const randomEmpty = this.config.randomEmpty;
-//     const { centers } = getHexagonCenters(wl, hl, 50);
-//     if (centers.length < 40) {
-//       return false
-//     }
-//     this.aiBlocks = [];
-//     // 初始化block
-//     this.blocks = getAvailableBlock(centers).map((center, _key) => {
-//       const block = new Block(this.ctx, _key);
-//       block.init(center);
-//       this.aiBlocks.push(block);
-//       return block;
-//     }).filter(item => { return item.point.available && Math.random() > randomEmpty });
-//     // 生成随机地图//通过block之间的连线体现
-//     this.randomMap();
-//     //设置初始块
-//     this.config.blockInterval = (this.config.blockIntervalSeed - this.config.blockInterval) / this.blocks.length;
-//     //生成三个不同的随机数// 用作玩家起始位置
-//     const r = getNsRandom(3, 0, this.blocks.length - 1);
-//     this.roles = r.map((item, index) => {
-//       const role = new Role({
-//         block: [this.blocks[item]],
-//         name: `角色${index + 1}`,
-//         isRobot: true,
-//         color: colorList[index],
-//         nextRole: this.nextRole.bind(this)
-//       });
-//       this.blocks[item].belongsTo = role;
-//       return role;
-//     });
-//     // 设置block邻居的位置索引//可能会用做ai的状态输入的一部分
-//     this.blocks.forEach((block, index) => {
-//       block.initNeighborsPositionIndex();
-//     });
-//     this.winRole = null;
-//     // this.renderCtx();
-//     return true
-//   }
-//   // 绑定点击事件
-//   handleClick(event) {
-//     const rect = this.ctx.canvas.getBoundingClientRect();
-//     const clickInfo = {
-//       x: event.clientX - rect.left,
-//       y: event.clientY - rect.top,
-//     }
-//     this.hitBlock = this.blocks.find(_ => _.isSelect(clickInfo))?.hit(this.hitBlock) || this.hitBlock;
-//   }
-//   // 查找邻居
-//   findnei(currentBlock) {
-//     currentBlock.visited = true;
-//     this.config.divisionContent += 1;
-//     let neis = [];
-//     this.blocks.forEach(block => { //
-//       if (block.id === currentBlock.id) {
-//         return;
-//       }
-//       const { x, y } = block.point;
-//       const dt = getDistance({ x, y }, { x: currentBlock.point.x, y: currentBlock.point.y });
-//       if (dt < (this.config.blockDefaultSize * 3.1)) {
-//         neis.push(block);
-//       }
-//     });
-//     neis = neis.filter(item => Math.random() < (this.config.blockIntervalSeed - (this.config.blockInterval * this.config.divisionContent)));
-//     if (neis.length <= 0) {
-//       return;
-//     }
-//     currentBlock.neighbors = [...new Set([...currentBlock.neighbors, ...neis])];
-//     neis = null;
-//     currentBlock.neighbors.forEach(block => {
-//       if (block.neighbors.includes(currentBlock) || block.visited) {
-//         return;
-//       }
-//       block.neighbors.push(currentBlock);
-//       return this.findnei.bind(this)(block);
-//     });
-//   }
-//   // 查找邻居
-//   randomMap() {
-//     let startRandom = getLimitRandom(0, this.blocks.length, true);
-//     let startBlock = this.blocks[startRandom];
-//     let _findnei = this.findnei.bind(this);
-
-//     _findnei(startBlock);
-//     let newBlocks = this.blocks.filter(block => block.neighbors.length > 0);
-//     // 必须是可用地图
-//     if (newBlocks.length > (this.config.coverArea * this.blocks.length)) {
-//       newBlocks.forEach(block => {
-//         block.neighbors.forEach(nei => {
-//           if (!nei.neighbors.includes(block)) {
-//             nei.neighbors.push(block);
-//           } else if (!block.neighbors.includes(nei)) {
-//             block.neighbors.push(nei);
-//           }
-//         });
-
-//       });
-//       this.blocks = newBlocks
-//       return;
-//     }
-
-//     newBlocks = null;
-//     startRandom = null;
-//     startBlock = null;
-//     _findnei = null;
-//     this.blocks.forEach(block => { block.neighbors = []; block.visited = false });
-//     this.config.divisionContent = 0;
-//     this.randomMap();
-//   }
-//   // 是否有胜利者
-//   isWin() {
-//     const roles = this.roles.filter(_ => _.blocks.length > 0);
-//     if (roles.length > 1) {
-//       return null
-//     } else {
-//       return roles[0];
-//     }
-//   }
-
-//   // 向外界更新数据
-//   updataState() {
-//     const newDate = {
-//       currentRole: this.roles?.[this?.currentActionRole]?.getState(),
-//       isStart: this.isStart,
-//       winRole: this.winRole,
-//       animation: this.animation,
-//       roles: this.roles.map(_ => ({ name: _.name, color: _.color })),
-//       aiInfo: this?.ai?.getAiInfo?.()
-//     }
-//     if (!isEqual(newDate, this.update)) {
-//       this.update = newDate;
-//       this.releaseData(newDate)
-//     }
-//   }
-//   //渲染
-//   renderCtx() {
-
-//     setInterval(() => {
-//       if (this.isStart && this.blocks.length) {
-//         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-//         this.blocks.forEach(_ => _.renderBlock(this.animation));
-//         this.updataState();
-//         this.winRole = this.isWin();
-//         // if (this.winRole) {
-//         //   return;
-//         // }
-//       }
-//     }, 1000);
-
-//     // requestAnimationFrame(this.renderCtx.bind(this));
-//   }
-//   // 下一步
-//   nextStep() {
-//     if (!this.isStart) {
-//       return;
-//     }
-//     this.roles?.[this?.currentActionRole]?.nextStep();
-//   }
-//   // 下一个角色行动
-//   nextRole(value) {
-//     this.currentActionRole += 1;
-//     if (this.currentActionRole >= this.roles.length) {
-//       this.currentActionRole = 0;
-//     }
-//     if (this.roles[this.currentActionRole].blocks.length <= 0) {
-//       return
-//     }
-//     this.roles[this.currentActionRole].attack();
-//   }
-//   // 更新ai数据
-//   setAiInfo(info) {
-//     this.animation = info.animation;
-//     this.ai.setAiInfo(info)
-//   }
-//   // 开始游戏
-//   startGame() {
-//     this.isStart = true;
-//     this.currentActionRole = 0;
-//     this.roles?.[this?.currentActionRole]?.attack();
-//   }
-//   // 新游戏
-//   newGame() {
-//     this.init();
-//     this.startGame();
-//   }
-// }

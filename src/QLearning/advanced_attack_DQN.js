@@ -115,7 +115,7 @@ export default class AdvancedAttackAgent extends Dqn {
     let end, foramtAction;
     if (actionIsValidata && aiAction !== 0) {
       foramtAction = (aiAction + '').split('.').map(_ => padNumber(_, 3));
-      end = this.game.blocks[Number(foramtAction[0])].tryAttacked(this.game.blocks[Number(foramtAction[1])]); // ai'玩'游戏
+      end = this.game.blocks[Number(foramtAction[0])]?.tryAttacked(this.game.blocks[Number(foramtAction[1])]); // ai'玩'游戏
     } else {
       foramtAction = [aiAction]
     }
