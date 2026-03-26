@@ -16,10 +16,13 @@
 }
 
 .hiddenContainer {
-  height: 0px;
-  overflow: hidden;
+  height: 0vh; 
+  z-index: 999;
 }
-
+.showContainer{
+  height: 100vh;
+  z-index: 999;
+}
 .grid {
   display: grid;
   gap: 2rem;
@@ -35,7 +38,7 @@
 .card {
   background-color: white;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   padding: 24px;
   transition: all 0.3s ease;
 }
@@ -228,4 +231,14 @@
   .input {
     width: 80px;
   }
+}
+
+.opearIcon {
+  width: 100px;
+  height: 100px;
+  background-color: red;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+
 }

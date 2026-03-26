@@ -1,0 +1,56 @@
+
+
+.game_main {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-color: black;
+}
+
+.gameBox::-webkit-scrollbar {
+  display: none;
+}
+
+
+#game {
+  box-sizing: border-box;
+  /* border: 1px solid #ccc; */
+  /* transform: scale(0.5) translateX(-50%)  translateY(-50%); */
+}
+
+
+
+.currentRole {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+.actionRoleColorBlock {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border: 2px solid #000;
+  margin: 0 30px;
+}
+
+.mask {
+  position: fixed;
+  z-index: 100;
+  top: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.666);
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+}
