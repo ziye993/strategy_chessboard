@@ -354,8 +354,8 @@ class GameAITrainer {
       this._updateTargetModel();
     }
     // 探索率衰减
-    if (this.epsilon > 0) {
-      this.epsilon = this.epsilon * this.epsilonDecay;
+    if (this.epsilon > this.epsilonMin) {
+      this.epsilon = Math.max(this.epsilonMin, this.epsilon * this.epsilonDecay);
     }
   }
 
@@ -380,10 +380,18 @@ class GameAITrainer {
         aiAction: tf.tidy(() => {
           const stateTensor = tf.tensor2d([state]);
           const qValues = this.model.predict(stateTensor);
-          console.log(qValues, 'qValues')
-          const action = qValues?.argMax?.(1)?.dataSync()[0];
-          // tf.dispose([state]);
-          return action;
+          const qValueArr = Array.from((qValues as tf.Tensor)?.dataSync?.() || []);
+          if (!initialActionList?.length) return 0;
+          let bestAction = initialActionList[0];
+          let bestValue = qValueArr[bestAction] ?? Number.NEGATIVE_INFINITY;
+          initialActionList.forEach((action) => {
+            const value = qValueArr[action] ?? Number.NEGATIVE_INFINITY;
+            if (value > bestValue) {
+              bestValue = value;
+              bestAction = action;
+            }
+          });
+          return bestAction;
         })
       }
     }

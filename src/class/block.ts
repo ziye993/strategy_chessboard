@@ -1,6 +1,6 @@
 import { IBlockPoint, IMapBlockData, TColorArray, TPoint, TRenderLinePoint, TVertexs } from "@/type/game.type";
 import { getNewUUID, getDistance } from "../tool/utils";
-import { clearHexagonByPoints, drawHexagon, drawLine, getVertexs } from "@/tool/canvasUtils";
+import { drawHexagon, drawLine, getVertexs } from "@/tool/canvasUtils";
 import { TAnyObject, TClassData, TId } from "@/type/globel.type";
 import Role from "./role";
 const gearContent: Record<number, number> = {
@@ -137,15 +137,19 @@ export default class Block {
     if (this.neighbors.length === 0) return;
     if (!this.isRefresh) return
 
-    const clearPoints = [...this.point.vertexs];
     let renderLinePoint: TRenderLinePoint = [];
     this.neighbors.forEach((nei, _neiIndex) => {
       const linePoints = findNearestPoints(this.point.vertexs, nei.point.vertexs);
-      clearPoints[this.neighborsPositionIndex[_neiIndex]] = linePoints[1];
       renderLinePoint.push([linePoints, this?.belongsTo?.color || this.color, nei?.belongsTo?.color || nei.color]);
     });
     requestAnimationFrame(() => {
-      clearHexagonByPoints(this.ctx, clearPoints);
+      const clearPadding = Math.max(8, this.point.size * 0.5);
+      this.ctx.clearRect(
+        this.point.x - this.point.sideLength - clearPadding,
+        this.point.y - this.point.size - clearPadding,
+        this.point.sideLength * 2 + clearPadding * 2,
+        this.point.size * 2 + clearPadding * 2
+      );
       drawHexagon(
         this.ctx,
         this.point,

@@ -4,9 +4,13 @@ import { useAuth } from "../contexts/AuthContext";
 import { getUUID } from "../tool/utils";
 import { IGameConfig, IGameInfo, IUseGameStatus } from "@/type/main.type";
 import { IUpdate } from "@/type/game.type";
+import loadWss from "./gamewss";
+import { IMessageData } from "@/type/hooks.type";
+import { TErrorType } from "@/type/error.type";
 
 
-const useGameStatus = (canvasId: string, config: IGameConfig): IUseGameStatus => {
+
+const useGameStatus = (canvasId: string, config: IGameConfig, onErrorMessage?: (messageData: IMessageData) => void): IUseGameStatus => {
   const { state: { user } = {} } = useAuth();
   const game = useRef<Game | null>(null);
   const [gameInfo, setGameInfo] = useState<IUpdate | undefined>(undefined);
@@ -23,10 +27,11 @@ const useGameStatus = (canvasId: string, config: IGameConfig): IUseGameStatus =>
       };
 
       if (config.gametype === 'line') {
+        gameWs.current = loadWss();
         const ws = gameWs.current;
         const ctx = canvasCtx.current;
 
-        if (!ws || !ctx) throw new Error("not gameWs or not canvasCtx");
+        if (!ws || !ctx) return;
 
         ws.onopen = () => {
           console.log('WebSocket连接已建立');
@@ -40,7 +45,9 @@ const useGameStatus = (canvasId: string, config: IGameConfig): IUseGameStatus =>
 
             if (!game.current) throw new Error("game not init");
 
-            game.current.playerAction(e.data);
+            const data = game.current.playerAction(e.data);
+
+            onErrorMessage?.(data)
           };
         };
 
@@ -50,6 +57,11 @@ const useGameStatus = (canvasId: string, config: IGameConfig): IUseGameStatus =>
 
         ws.onerror = (error) => {
           console.error('WebSocket错误:', error);
+          onErrorMessage?.({
+            error: TErrorType.WS_ERROR,
+            message: '对局异常结束',
+            time: Date?.now()
+          })
         };
 
       } else {

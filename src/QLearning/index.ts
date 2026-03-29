@@ -15,6 +15,7 @@ export default class AiAgent {
   demonstrate: boolean | number;
   interval: number;
   timeId: any;
+  renderTimeId: any;
   demonstrintervalate?: number;
   constructor(game: Game) {
     this.game = game;
@@ -31,6 +32,7 @@ export default class AiAgent {
     this.demonstrate = false;
     this.interval = 1000;
     this.timeId = null;
+    this.renderTimeId = null;
     this.loadConfig();
   }
 
@@ -128,6 +130,10 @@ export default class AiAgent {
   paushTrain() {
     this.start = false;
     this.training = false;
+    if (this.renderTimeId) {
+      clearInterval(this.renderTimeId);
+      this.renderTimeId = null;
+    }
     try {
 
     } catch (error) {
@@ -180,7 +186,10 @@ export default class AiAgent {
     }
 
     // 模型初始化  &  加载已有模型
-    setInterval(() => { this.game.renderAllBlock() }, 1000)
+    if (this.renderTimeId) {
+      clearInterval(this.renderTimeId);
+    }
+    this.renderTimeId = setInterval(() => { this.game.renderAllBlock() }, 1000)
     // 开始训练
     this.start = true;
     this.training = true;
@@ -238,8 +247,6 @@ export default class AiAgent {
         ]);
       } catch (error) { }
 
-      this.currentTrainNumber++;
-
       this.attackRobot.accumulatedPunishment = Math.floor(this.attackRobot.accumulatedPunishment);
       this.attackRobot.accumulatedRewards = Math.floor(this.attackRobot.accumulatedRewards);
       this.proliferationRobot.accumulatedPunishment = Math.floor(this.proliferationRobot.accumulatedPunishment);
@@ -254,6 +261,10 @@ export default class AiAgent {
     }
 
     this.training = false;
+    if (this.renderTimeId) {
+      clearInterval(this.renderTimeId);
+      this.renderTimeId = null;
+    }
   }
 
 

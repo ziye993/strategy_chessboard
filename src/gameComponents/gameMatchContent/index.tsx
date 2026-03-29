@@ -114,7 +114,7 @@ const Match = ({ players, enterGame, errorBack }: IMatchProps) => {
     <h2 className={styles["section-title"]}>{readProgress !== 100 ? '匹配成功!' : ' 等待其他玩家准备！'} </h2>
     <div className={styles["matched-player-info"]}>
       {players.map(_ => {
-        return <div className={styles["player-details"]}>
+        return <div className={styles["player-details"]} key={`${_}`}>
           <div className={styles["player-name"]}>{_}</div>
           <div className={styles["player-stats"]}>
             <span className={styles["stat-item"]}>等级: {0}</span>

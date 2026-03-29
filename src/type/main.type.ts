@@ -13,7 +13,7 @@ export interface IGameInfo {
 
 export interface IUseGameStatus {
   gameInfo: IUpdate | undefined;
-  newGame: (() => void) | undefined;
+  newGame: ((type?: "train") => void) | undefined;
   nextStep: (() => void) | undefined;
   startTrain: ((run: any) => Promise<void>) | undefined;
   setAiInfo: ((info: any) => void) | undefined;

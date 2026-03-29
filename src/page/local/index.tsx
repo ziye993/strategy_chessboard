@@ -52,7 +52,7 @@ const Local: React.FC<{ gameConfig: IGameConfig }> = (props) => {
               }
             })
           }
-          return { ...prev, open: true, data: {} }
+          return { ...prev, open: false, data: {} }
         });
 
 

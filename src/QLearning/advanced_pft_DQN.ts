@@ -5,8 +5,9 @@ import { IGetRewardValue } from '@/type/ai.type';
 
 export default class AdvancedPftAgent extends Dqn {
   game: Game;
+  static readonly PASS_ACTION = 150;
   constructor(game: Game, config = { mapSize: 150, }) {
-    super('AdvancedPftAgentModel', { ...config, stateShape: 12 * 150 + 1, actionSpaceSize: 150 });
+    super('AdvancedPftAgentModel', { ...config, stateShape: 12 * 150 + 1, actionSpaceSize: 151 });
     this.game = game;
   }
 
@@ -70,15 +71,15 @@ export default class AdvancedPftAgent extends Dqn {
     // console.log(rewardInfo, value, nextValue)
     // console.log(rewardInfo.blockLength - rewardInfo.threat * 0.3 + rewardInfo.effectiveness * 0.1)
     // reward += actionIsValidata ? 1 : -1;
-    if (initialActionList.length === 1 && aiAction === -1) reward = reward >= 0 ? reward += 1 : 1;;
+    if (initialActionList.length === 1 && aiAction === AdvancedPftAgent.PASS_ACTION) reward = reward >= 0 ? reward += 1 : 1;;
     if (reward > 0) this.accumulatedRewards += reward;
-    else this.accumulatedPunishment += reward;
+    else this.accumulatedPunishment += Math.abs(reward);
     return reward;
   }
 
   getAvailableActionList() {
     const role = this.game.roles[this.game.currentActionRole];
-    const actionList = [-1];
+    const actionList = [AdvancedPftAgent.PASS_ACTION];
     if (role.fraction && role.fraction > 0) {
       const _actionList = role.blocks.filter(_ => _.content < _.maxSize);
       return [...actionList, ..._actionList.map(_ => _.realIndex)]
@@ -105,11 +106,11 @@ export default class AdvancedPftAgent extends Dqn {
     const invalActionList = this.getAvailableActionList();
     const action = invalActionList[Math.floor(Math.random() * invalActionList.length)];
     let end;
-    if (action && action !== -1) {
+    if (action !== AdvancedPftAgent.PASS_ACTION) {
       end = this.game.blocks[action]?.tryProliferation?.(1, 'train');
       // await this.sleep(10);
     };
-    if (action === -1) return false
+    if (action === AdvancedPftAgent.PASS_ACTION) return false
     return invalActionList.length !== 1;
   }
 
@@ -121,19 +122,17 @@ export default class AdvancedPftAgent extends Dqn {
     const { aiAction, actionType } = await this.gameAi.selectAction({ state, initialActionList: invalActionList });
     const actionIsValidata: boolean = invalActionList.includes(aiAction);
     let end;
-    if (actionIsValidata && aiAction !== -1) {
+    if (actionIsValidata && aiAction !== AdvancedPftAgent.PASS_ACTION) {
       end = this.game.blocks[aiAction]?.tryProliferation(1, 'train');
       // await this.sleep(10);
     };
     let done = false;
-    if (actionIsValidata && aiAction === -1) {
+    if (actionIsValidata && aiAction === AdvancedPftAgent.PASS_ACTION) {
       done = true
     }
     const nextState = this.getGameState();
     const nextStatusValue = this.getStatusValue(nextState);
     const reward = this.getReward(statusValue, nextStatusValue, actionIsValidata, aiAction, invalActionList);
-    if (reward > 0) this.accumulatedRewards += reward;
-    else this.accumulatedPunishment += reward;
     await this.gameAi.recordExperience(aiAction, reward, state, nextState, done);
     actionType === 'ai' && console.log(`
 ----------Pft--------------
@@ -144,9 +143,8 @@ aiAction: ${aiAction},
 initialActionList: ${invalActionList.join('/')},
 -----------------------
         `);
-    if (aiAction === -1) return true // 結束選擇
+    if (aiAction === AdvancedPftAgent.PASS_ACTION) return true // 結束選擇
     return invalActionList.length !== 1;
   }
 
 }
-

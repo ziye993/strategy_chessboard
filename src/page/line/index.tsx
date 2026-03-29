@@ -17,7 +17,7 @@ const Line: React.FC<{ gameConfig: IGameConfig }> = (props: IProps) => {
       setMatchSuccessful(true);
     }} />
   } else {
-    return <GameBody gameConfig={gameConfig.current} />
+    return <GameBody gameConfig={gameConfig.current} goMatchHome={() => { setMatchSuccessful(false) }} />
   }
 }
 

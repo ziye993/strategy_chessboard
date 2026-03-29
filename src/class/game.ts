@@ -9,6 +9,8 @@ import { getDistance, getLimitRandom, getNsRandom, getUUID, isEqual } from "@/to
 import { getHexagonCenters, getVertexs } from "@/tool/canvasUtils";
 import AiAgent from "@/QLearning";
 import { IGameConfig as IMainGameConfig } from "@/type/main.type";
+import { IMessageData } from "@/type/hooks.type";
+import { TErrorType } from "@/type/error.type";
 const gameConfig: IGameConfig = {
   branchProbability: 0.9,// 产生分支概率
   branchAttenuation: 0.991, //产生分支衰减
@@ -426,7 +428,7 @@ export default class Game {
     this.roles?.[this?.currentActionRole]?.attack();
   }
   // 新游戏
-  newGame(type: 'train') {
+  newGame(type?: 'train') {
     if (this.gameType === 'line') {
       return
     }
@@ -437,17 +439,25 @@ export default class Game {
     }
   }
 
-  playerAction(actionStr = "") {
+  playerAction(actionStr = ""): IMessageData {
     const actionInfoList = actionStr.split('.');
     if (actionInfoList[2] === 'disconnect') {
-      console.log(`${actionInfoList[0]} 离线`);
-      return
+      console.log(`用户: ${actionInfoList[1]} 以离开 0秒`);
+      return {
+        error: TErrorType.PLAYER_OUT,
+        message: `用户: ${actionInfoList[1]} 已离开 ${Math.floor((Date.now() - Number(actionInfoList[0])) / 1000)} 秒`,
+        time: Date.now(),
+      }
     }
     const actionPlayerId = actionInfoList[1];
     const role = this.roles[this.currentActionRole];
     if ((role.id + '') !== (actionPlayerId + '')) {
       console.log('错误数据： ', actionStr)
-      return
+      return {
+        error: TErrorType.GAME_DATA_EXCEP,
+        message: `对局数据异常`,
+        time: Date.now(),
+      }
     }
     const type = actionInfoList?.[2];
     const actionInfo = actionInfoList.splice(2);
@@ -465,6 +475,11 @@ export default class Game {
         break;
       default:
         break;
+    }
+    return {
+      error: TErrorType.SUCCESS,
+      message: ``,
+      time: Date.now(),
     }
   }
 

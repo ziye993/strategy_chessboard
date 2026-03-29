@@ -1,7 +1,8 @@
 import { TAnyObject } from "@/type/globel.type";
+import { BASE_IP } from "./baseApi";
 
 
-const url = 'http://localhost:3001/infect'
+const url = BASE_IP + '/infect'
 /**
  * 极简JSON上传函数
  * @param {Object|Array} data - 要上传的对象或数组

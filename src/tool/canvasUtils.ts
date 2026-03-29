@@ -3,8 +3,8 @@ import { TCenters } from "@/type/utils.type";
 
 //画正六边形
 export function drawHexagon(ctx: CanvasRenderingContext2D, center: IBlockPoint, color: TColorArray, content = 0, fill = 0, changeTip?: string, tipTop?: number) {
-  ctx.shadowOffsetX = -5;
-  ctx.shadowOffsetY = -5;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
   // ctx.shadowBlur = 5;
   // ctx.shadowColor = `rgba(${color.toSpliced(2, 1).join(',')},1)`;
   const { x, y, sideLength, size, vertexs, maxSize } = center;
@@ -16,7 +16,7 @@ export function drawHexagon(ctx: CanvasRenderingContext2D, center: IBlockPoint, 
     const vert = getVertexs({ x, y, size: 10 + (size - 10) * fill });
     ctxDrawHexagon(ctx, vert.vertexs, color, true);
   }
-  ctx.shadowBlur = 30;
+  ctx.shadowBlur = 0;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
   //文字
@@ -114,7 +114,7 @@ export function drawCrosshair(ctx: CanvasRenderingContext2D, x: number, y: numbe
 }
 
 function ctxDrawHexagon(ctx: CanvasRenderingContext2D, vert: TVertexs, color: TColorArray, fill: boolean) {
-  ctx.shadowBlur = 20;
+  ctx.shadowBlur = 0;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
   ctx.strokeStyle = `rgba(${color.join(',')})` || '#FFF';

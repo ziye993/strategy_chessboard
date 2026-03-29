@@ -9,6 +9,8 @@ export default class AdvancedAttackAgent extends Dqn {
   game: Game;
   accumulatedRewards: number;
   accumulatedPunishment: number;
+  static readonly MAP_SIZE = 150;
+  static readonly STOP_ACTION = 0;
   constructor(game: Game, config = { mapSize: 150, }) {
 
     super('AdvancedAttackAgentModel', { ...config, stateShape: 12 * 150, actionSpaceSize: 150150 });
@@ -72,26 +74,37 @@ export default class AdvancedAttackAgent extends Dqn {
     const rewardInfo = {
       blockLength: nextValue.blockLength - value.blockLength,
       threat: nextValue.threat - value.threat,
-      effectiveness: nextValue.threat - value.threat,
+      effectiveness: (nextValue.effectiveness || 0) - (value.effectiveness || 0),
     };
     let reward = Math.floor(rewardInfo.blockLength - rewardInfo.threat * 0.3 + rewardInfo.effectiveness * 0.1) > 0 ? 1 : -1;
     //  console.log(rewardInfo.blockLength - rewardInfo.threat * 0.3 + rewardInfo.effectiveness * 0.1)
     // reward += actionIsValidata ? 1 : -1;
-    if (initialActionList.length === 1 && aiAction === 0) reward = reward >= 0 ? reward += 1 : 1;
+    if (initialActionList.length === 1 && aiAction === AdvancedAttackAgent.STOP_ACTION) reward = reward >= 0 ? reward += 1 : 1;
     if (reward > 0) this.accumulatedRewards += reward;
-    else this.accumulatedPunishment += reward;
+    else this.accumulatedPunishment += Math.abs(reward);
     return reward;
+  }
+
+  private encodeAction(targetIndex: number, sourceIndex: number) {
+    return targetIndex * AdvancedAttackAgent.MAP_SIZE + sourceIndex + 1;
+  }
+
+  private decodeAction(action: number) {
+    const value = action - 1;
+    const target = Math.floor(value / AdvancedAttackAgent.MAP_SIZE);
+    const source = value % AdvancedAttackAgent.MAP_SIZE;
+    return { target, source };
   }
 
   // 有效行动列
   getAvailableActionList() {
     const role = this.game.roles[this.game.currentActionRole];
-    const actionList = [0];
+    const actionList = [AdvancedAttackAgent.STOP_ACTION];
     role.blocks.forEach(_ => {
       if (_.content >= 2) {
         _.neighbors.forEach(__ => {
           if (__.belongsTo !== _.belongsTo) {
-            actionList.push(+`${__.index}.${padNumber(_.index + '', 3)}`)
+            actionList.push(this.encodeAction(__.index, _.index))
           }
         })
       }
@@ -106,12 +119,11 @@ export default class AdvancedAttackAgent extends Dqn {
   randomAction() {
     const initialActionList = this.getAvailableActionList();
     const action = initialActionList[Math.floor(Math.random() * initialActionList.length)];
-    let end, foramtAction;
-    if (action !== 0) {
-      foramtAction = (action + '').split('.').map(_ => padNumber(_, 3));
-      this.game.blocks[Number(foramtAction[0])]?.tryAttacked(this.game.blocks[Number(foramtAction[1])], "train");
+    if (action !== AdvancedAttackAgent.STOP_ACTION) {
+      const { target, source } = this.decodeAction(action);
+      this.game.blocks[target]?.tryAttacked(this.game.blocks[source], "train");
     }
-    if (action === 0) return false;
+    if (action === AdvancedAttackAgent.STOP_ACTION) return false;
     return initialActionList.length !== 1;
   }
 
@@ -122,12 +134,12 @@ export default class AdvancedAttackAgent extends Dqn {
     const initialActionList = this.getAvailableActionList();
     const { aiAction, actionType } = await this.gameAi.selectAction({ state, initialActionList });
     const actionIsValidata = initialActionList.includes(aiAction);
-    let end, foramtAction;
-    if (actionIsValidata && aiAction !== 0) {
-      foramtAction = (aiAction + '').split('.').map(_ => padNumber(_, 3));
-      end = this.game.blocks[Number(foramtAction[0])]?.tryAttacked(this.game.blocks[Number(foramtAction[1])],"train"); // ai'玩'游戏
-    } else {
-      foramtAction = [aiAction]
+    let end;
+    let formatAction = aiAction;
+    if (actionIsValidata && aiAction !== AdvancedAttackAgent.STOP_ACTION) {
+      const { target, source } = this.decodeAction(aiAction);
+      formatAction = Number(`${padNumber(target + '', 3)}${padNumber(source + '', 3)}`);
+      end = this.game.blocks[target]?.tryAttacked(this.game.blocks[source], "train"); // ai'玩'游戏
     }
     let done = false;
     if (this.game.winRole) {
@@ -136,20 +148,18 @@ export default class AdvancedAttackAgent extends Dqn {
     const nextStatusValue = this.getStatusValue();
     const nextState = this.getGameState();
     const reward = this.getReward(statusValue, nextStatusValue, actionIsValidata, aiAction, initialActionList);
-    if (reward > 0) this.accumulatedRewards += reward;
-    else this.accumulatedPunishment += reward;
-    await this.gameAi.recordExperience(Number(foramtAction.join('')), reward, state, nextState, done);
+    await this.gameAi.recordExperience(aiAction, reward, state, nextState, done);
     actionType === 'ai' && console.log(`
 ----------Attack--------------
 end: ${end}, 
 reward: ${reward},
 type: ${actionType},
-aiAction: ${foramtAction?.join?.('<=') || aiAction},
-expAction: ${Number(foramtAction.join(''))}
+aiAction: ${formatAction},
+expAction: ${aiAction}
 initialActionList: ${initialActionList.join('/')},
 -----------------------
         `)
-    if (aiAction === 0) return true;  // 結束選擇
+    if (aiAction === AdvancedAttackAgent.STOP_ACTION) return true;  // 結束選擇
     return initialActionList.length !== 1;
   }
 

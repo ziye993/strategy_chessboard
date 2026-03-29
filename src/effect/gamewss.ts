@@ -8,7 +8,7 @@ const loadWss = () => {
     } else {
         const tmptk = getCookie('tmptk')
         if (!tmptk) return null
-        gameWs = new WebSocket(`ws://192.168.0.104:3001/gameBattle?token=${encodeURIComponent(tmptk)}`);
+        gameWs = new WebSocket(`ws://192.168.0.105:3001/gameBattle?token=${encodeURIComponent(tmptk)}`);
         return gameWs
     }
 }

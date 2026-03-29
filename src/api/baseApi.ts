@@ -1,7 +1,10 @@
+import message from "@/components/Modal/message";
 import { TOriginDataType } from "@/type/api.type";
 import { TAnyObject } from "@/type/globel.type";
 
-const BASE_URL = 'http://localhost:3001/infect'; // 
+export const BASE_IP = "http://localhost:3001";
+
+const BASE_URL = BASE_IP + '/infect'; // 
 
 // 处理请求错误
 const handleError = async (response: Response) => {
@@ -32,6 +35,7 @@ export const get = async (api: string, params?: { [x: string]: TOriginDataType }
     return handleError(response);
   } catch (error) {
     console.error('GET 请求错误:', error);
+    message.error("请求失败，请检查网络，或稍后再试吧")
     return { res: false, message: "连接失败，请检查网络，或稍后再试吧" }
   }
 };
@@ -51,6 +55,7 @@ export const post = async (api: string, body: TAnyObject = {}, headers = {}) => 
     return handleError(response);
   } catch (error) {
     console.error('POST 请求错误:', error);
+    message.error("请求失败，请检查网络，或稍后再试吧")
     return { res: false, message: "连接失败，请检查网络，或稍后再试吧" }
   }
 };
