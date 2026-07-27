@@ -1,6 +1,6 @@
 import { data } from "@tensorflow/tfjs";
 
-const api = 'http://localhost:3001/api/saveJson'
+const api = `${process.env.REACT_APP_API_URL || ''}/api/saveJson`
 /**
  * 极简JSON上传函数
  * @param {Object|Array} data - 要上传的对象或数组
