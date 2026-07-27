@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, type FormEvent } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-// interface LoginFormProps {
-//   onLoginSuccess?: () => void;
-// }
+interface LoginFormProps {
+  onLoginSuccess?: () => void;
+}
 
-export const LoginForm = ({ onLoginSuccess }) => {
+export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -13,7 +13,7 @@ export const LoginForm = ({ onLoginSuccess }) => {
   
   const { login } = useAuth();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
     // 简单的表单验证
@@ -26,7 +26,7 @@ export const LoginForm = ({ onLoginSuccess }) => {
     setError('');
     
     try {
-      const success = await login(email, password);
+      const success = await login({ email, password });
       
       if (success) {
         if (onLoginSuccess) onLoginSuccess();
@@ -72,4 +72,4 @@ export const LoginForm = ({ onLoginSuccess }) => {
       </button>
     </form>
   );
-};    
+};

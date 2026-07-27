@@ -106,7 +106,7 @@ export default class AdvancedPftAgent extends Dqn {
     const invalActionList = this.getAvailableActionList();
     const action = invalActionList[Math.floor(Math.random() * invalActionList.length)];
     let end;
-    if (action !== AdvancedPftAgent.PASS_ACTION) {
+    if (action !== undefined && action !== AdvancedPftAgent.PASS_ACTION) {
       end = this.game.blocks[action]?.tryProliferation?.(1, 'train');
       // await this.sleep(10);
     };

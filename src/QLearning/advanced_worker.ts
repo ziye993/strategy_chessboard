@@ -303,16 +303,16 @@ class GameAITrainer {
     const dones = memory.map(exp => exp.done);
 
     // 创建批处理张量
-    const stateTensor = tf.tensor2d(states.flat(), [states.length, ...this.stateShape]);
-    const nextStateTensor = tf.tensor2d(nextStates.flat(), [nextStates.length, ...this.stateShape]);
+    const stateDim = this.stateShape[0] ?? 0;
+    const stateTensor = tf.tensor2d(states.flat(), [states.length, stateDim]);
+    const nextStateTensor = tf.tensor2d(nextStates.flat(), [nextStates.length, stateDim]);
     // gpuInfo = tf.memory();
     // 计算目标Q值
     const targetQs = tf.tidy(() => {
       // 当前Q值预测 [batchSize, actionSpaceSize]
-      const currentQs = this.model.predict(stateTensor);
-
+      const currentQs = this.model.predict(stateTensor) as tf.Tensor;
       // 下一状态的Q值预测
-      const nextQs = this.targetModel.predict(nextStateTensor);
+      const nextQs = this.targetModel.predict(nextStateTensor) as tf.Tensor;
 
       // 计算每个样本的最大Q值 [batchSize]
       const maxNextQs = nextQs.max(1);
@@ -331,7 +331,7 @@ class GameAITrainer {
       const tqs = targetValues.expandDims(1).mul(actionMask);
 
       // 保持其他动作的Q值不变，只更新当前动作的Q值
-      const targetQs = currentQs.mul(tf.scalar(1).sub(actionMask)).add(tqs)
+      const targetQs = (currentQs as tf.Tensor).mul(tf.scalar(1).sub(actionMask)).add(tqs)
       // tf.dispose([]);
       return targetQs;
     });

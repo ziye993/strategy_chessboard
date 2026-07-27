@@ -96,7 +96,7 @@ const StatusDisplay = (props: IProps & IUseGameStatus) => {
       {/* <GameStatusProgress type={gameType}>0</GameStatusProgress> */}
       <div className="status-edit">
         <i className="bi bi-chevron-bar-right" onClick={() => (!aiInfo?.training && stepTrain?.())}></i>
-        <i className="bi bi-arrow-clockwise" onClick={newGame}></i>
+        <i className="bi bi-arrow-clockwise" onClick={() => newGame?.()}></i>
       </div>
     </GameStateBar>
 

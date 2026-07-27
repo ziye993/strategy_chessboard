@@ -189,7 +189,7 @@ export default class Block {
     return this
   }
   /**尝试被 block 攻击 */
-  tryAttacked(block: Block) {
+  tryAttacked(block: Block, _mode?: string) {
     const neiSelect = block; //攻击者     this=被攻击者
     if (neiSelect && (neiSelect.belongsTo !== this.belongsTo)) {
       // 敌方进攻
@@ -246,7 +246,7 @@ export default class Block {
     }
   }
 
-  tryProliferation(value: number = 1) {
+  tryProliferation(value: number = 1, _mode?: string) {
     if (!this.belongsTo) return
 
     if (this?.belongsTo?.fraction && (
