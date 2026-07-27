@@ -1,8 +1,8 @@
 import { TAnyObject } from "@/type/globel.type";
 import { BASE_IP } from "./baseApi";
 
+const getInfectBase = () => (BASE_IP || window.location.origin) + "/infect";
 
-const url = BASE_IP + '/infect'
 /**
  * 极简JSON上传函数
  * @param {Object|Array} data - 要上传的对象或数组
@@ -11,7 +11,7 @@ const url = BASE_IP + '/infect'
  */
 export async function postJSON(api: string, data: TAnyObject) {
   try {
-    const response = await fetch(url + api, {
+    const response = await fetch(getInfectBase() + api, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

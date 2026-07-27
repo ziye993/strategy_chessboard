@@ -2,9 +2,12 @@ import message from "@/components/Modal/message";
 import { TOriginDataType } from "@/type/api.type";
 import { TAnyObject } from "@/type/globel.type";
 
-export const BASE_IP = "http://localhost:3001";
+/** 构建时可注入 VITE_API_BASE；留空则运行时走当前页面同源（Docker 下为 :30016） */
+export const BASE_IP = (import.meta.env.VITE_API_BASE as string | undefined) || "";
 
-const BASE_URL = BASE_IP + '/infect'; // 
+const getBaseIp = () => BASE_IP || window.location.origin;
+
+const BASE_PATH = "/infect";
 
 // 处理请求错误
 const handleError = async (response: Response) => {
@@ -18,16 +21,15 @@ const handleError = async (response: Response) => {
 
 // 发送 GET 请求
 export const get = async (api: string, params?: { [x: string]: TOriginDataType } | undefined) => {
-  const url = new URL(`${BASE_URL}/${api}`);
+  const url = new URL(`${getBaseIp()}${BASE_PATH}/${api}`);
   if (params) {
     Object.keys(params).forEach(key => url.searchParams.append(key, (String(params[key]))));
   }
-  // 添加查询参数
 
   try {
     const response = await fetch(url, {
       method: 'GET',
-      credentials: 'include',  // 确保 Cookie 会随请求发送
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -43,12 +45,12 @@ export const get = async (api: string, params?: { [x: string]: TOriginDataType }
 // 发送 POST 请求
 export const post = async (api: string, body: TAnyObject = {}, headers = {}) => {
   try {
-    const response = await fetch(`${BASE_URL}/${api}`, {
+    const response = await fetch(`${getBaseIp()}${BASE_PATH}/${api}`, {
       method: 'POST',
-      credentials: 'include',  // 确保 Cookie 会随请求发送
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        ...headers, // 可以添加额外的请求头
+        ...headers,
       },
       body: JSON.stringify(body),
     });
